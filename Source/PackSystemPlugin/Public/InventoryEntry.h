@@ -9,6 +9,7 @@ class UInventoryComponent;
 /**
  * 背包中的一条库存记录。
  * 保存条目标识、数量以及该条目引用的运行时物品实例。
+ * Slot 中空 Entry 仍然存在；Aggregate 中数量归零的 Entry 会被删除。
  */
 USTRUCT(BlueprintType)
 struct PACKSYSTEMPLUGIN_API FInventoryEntry

@@ -9,12 +9,19 @@
 class UInventoryComponent;
 class UInventoryItemInstance;
 
+/**
+ * 存储规则的只读规划接口。
+ *
+ * 派生类不能直接写 Inventory；它们只根据当前快照返回 OperationPlan。
+ * 所有 Plan 最终都由 UInventoryComponent 统一校验并提交。
+ */
 UCLASS(Abstract, BlueprintType, Blueprintable, EditInlineNew, DefaultToInstanced)
 class PACKSYSTEMPLUGIN_API UInventoryStorageStrategy : public UObject
 {
 	GENERATED_BODY()
 
 public:
+	/** Slot 返回固定格子数，Aggregate 返回 0。只在首次初始化时读取。 */
 	virtual int32 GetInitialEntryCount() const { return 0; }
 
 	virtual FInventoryOperationPlan BuildAddPlan(

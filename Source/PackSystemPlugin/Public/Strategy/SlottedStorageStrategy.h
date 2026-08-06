@@ -4,6 +4,10 @@
 #include "Strategy/InventoryStorageStrategy.h"
 #include "SlottedStorageStrategy.generated.h"
 
+/**
+ * 固定格存储：初始化时创建 SlotCount 个空 Entry，并在整个运行期保留这些 Entry。
+ * 每格遵守物品 MaxStackSize；本版本不提供运行时扩容或缩容。
+ */
 UCLASS(DisplayName = "Slotted Inventory")
 class PACKSYSTEMPLUGIN_API USlottedStorageStrategy : public UInventoryStorageStrategy
 {
@@ -22,6 +26,7 @@ public:
 	int32 GetSlotCount() const { return SlotCount; }
 
 private:
+	/** 只决定初始化数量，初始化完成后没有修改容量的公开接口。 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory|Strategy", meta = (AllowPrivateAccess = true, ClampMin = "1", UIMin = "1"))
 	int32 SlotCount = 20;
 };

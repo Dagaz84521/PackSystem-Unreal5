@@ -4,6 +4,7 @@
 #include "InventoryEntry.h"
 #include "InventoryEntryArray.generated.h"
 
+/** 库存真正持久保存的数据；Handle 列表由该数组按需生成，避免双份缓存失配。 */
 USTRUCT(BlueprintType)
 struct PACKSYSTEMPLUGIN_API FInventoryEntryArray
 {
@@ -17,6 +18,10 @@ public:
 	TObjectPtr<UInventoryComponent> InventoryComponent;
 };
 
+/**
+ * Entry 的稳定外部引用，由“容器 + 容器内唯一 ID”组成，不能把数组下标当作 Handle。
+ * Slot 清空后 Handle 继续有效；Aggregate 删除记录后对应 Handle 立即失效。
+ */
 USTRUCT(BlueprintType)
 struct PACKSYSTEMPLUGIN_API FInventoryEntryHandle
 {

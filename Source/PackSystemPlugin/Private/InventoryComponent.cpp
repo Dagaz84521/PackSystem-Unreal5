@@ -10,6 +10,8 @@
 UInventoryComponent::UInventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	// 组件开箱即用：没有显式配置时，它就是一个固定 20 格的 Slot 背包。
+	// 因为 Strategy 是 Instanced 子对象，每个组件都能拥有自己独立的规则配置。
 	StorageStrategy = CreateDefaultSubobject<USlottedStorageStrategy>(TEXT("StorageStrategy"));
 }
 
@@ -21,11 +23,13 @@ void UInventoryComponent::BeginPlay()
 
 bool UInventoryComponent::SetStorageStrategy(UInventoryStorageStrategy* InStorageStrategy)
 {
+	// 初始化后再换规则会破坏已有 Entry 的不变量，例如把 Slot 空格交给 Aggregate。
 	if (bInitialized || !IsValid(InStorageStrategy))
 	{
 		return false;
 	}
 
+	// 外部传入的模板对象不能直接共享；复制到组件下，使生命周期和配置都归当前背包所有。
 	StorageStrategy = InStorageStrategy->GetOuter() == this
 		? InStorageStrategy
 		: DuplicateObject<UInventoryStorageStrategy>(InStorageStrategy, this);
@@ -44,6 +48,8 @@ bool UInventoryComponent::InitializeInventory()
 	}
 
 	EntryArray.InventoryComponent = this;
+	// 兼容编辑器预置或将来的反序列化数据：修复 Owner、重复 ID 和无效 ID。
+	// ID 只要求容器内唯一；NextEntryID 单调前进，避免正常运行时过早复用旧 Handle。
 	TSet<int32> UsedIDs;
 	NextEntryID = 0;
 	for (FInventoryEntry& Entry : EntryArray.ItemEntries)
@@ -64,6 +70,7 @@ bool UInventoryComponent::InitializeInventory()
 		}
 	}
 
+	// 只有初始化阶段会补齐 Slot。运行时没有 Resize API，因此此后格子数量保持不变。
 	const int32 RequiredEntries = FMath::Max(0, StorageStrategy->GetInitialEntryCount());
 	while (EntryArray.ItemEntries.Num() < RequiredEntries)
 	{
@@ -82,6 +89,7 @@ bool UInventoryComponent::InitializeInventory()
 
 TArray<FInventoryEntryHandle> UInventoryComponent::GetAllEntryHandles() const
 {
+	// Handle 从权威 EntryArray 即时生成，避免维护一份容易失配的并行缓存。
 	TArray<FInventoryEntryHandle> Handles;
 	Handles.Reserve(EntryArray.ItemEntries.Num());
 	for (const FInventoryEntry& Entry : EntryArray.ItemEntries)
@@ -121,6 +129,7 @@ int64 UInventoryComponent::GetQuantityForItem(const UInventoryItemInstance* Item
 		{
 			continue;
 		}
+		// 查询不应因为极端数据发生有符号整数溢出；无法精确表示时饱和到 int64 上限。
 		if (Entry.Quantity > MAX_int64 - Total)
 		{
 			return MAX_int64;
@@ -160,6 +169,7 @@ bool UInventoryComponent::ContainsItem(const UInventoryItemInstance* ItemInstanc
 
 FInventoryOperationResult UInventoryComponent::AddItem(const FInventoryAddRequest& Request)
 {
+	// 公开入口只做与策略无关的防御性校验；放置顺序、堆叠上限等由 Strategy 决定。
 	if (!InitializeInventory())
 	{
 		return MakeFailure(Request.Quantity, InventoryOperationTags::MissingStrategy);
@@ -311,6 +321,7 @@ FInventoryOperationResult UInventoryComponent::TransferItem(
 
 	if (TargetInventory == this)
 	{
+		// 同容器“转移”退化为移动，避免为同一数组维护两份工作副本。
 		if (!TargetEntry.IsValid())
 		{
 			return MakeFailure(Quantity, InventoryOperationTags::InvalidHandle);
@@ -335,6 +346,8 @@ FInventoryOperationResult UInventoryComponent::TransferItem(
 	}
 
 	const int64 AvailableQuantity = FMath::Min(Quantity, Source.Quantity);
+	// 先询问目标最多能接收多少，再按该数量为源端规划移除。
+	// 这就是部分转移的核心：目标接收 N，源端也必须恰好移除 N。
 	FInventoryAddRequest AddRequest;
 	AddRequest.InventoryItemInstance = Source.ItemInstance;
 	AddRequest.Quantity = AvailableQuantity;
@@ -354,6 +367,7 @@ FInventoryOperationResult UInventoryComponent::TransferItem(
 		return MakeFailure(Quantity, InventoryOperationTags::StalePlan);
 	}
 
+	// 两个计划都通过校验后，仍只在各自副本上执行。任意一边失败时，真实容器均不改变。
 	TArray<FInventoryEntry> TargetEntries = TargetInventory->EntryArray.ItemEntries;
 	TArray<FInventoryEntry> SourceEntries = EntryArray.ItemEntries;
 	int32 TargetNextID = TargetInventory->NextEntryID;
@@ -366,6 +380,7 @@ FInventoryOperationResult UInventoryComponent::TransferItem(
 		return MakeFailure(Quantity, InventoryOperationTags::StalePlan);
 	}
 
+	// 两边都准备完成后才连续提交，并延后广播；观察者不会看到只有一边完成的中间状态。
 	TargetInventory->CommitEntries(MoveTemp(TargetEntries), TargetNextID, TargetChanges, false);
 	CommitEntries(MoveTemp(SourceEntries), SourceNextID, SourceChanges, false);
 	if (!TargetChanges.Changes.IsEmpty())
@@ -414,6 +429,7 @@ int32 UInventoryComponent::AllocateEntryID(const TArray<FInventoryEntry>& Entrie
 		InOutNextEntryID = 0;
 	}
 
+	// 最多检查 Num + 1 个候选就必然能找到空 ID（除非 int32 空间真的已经耗尽）。
 	for (int32 Attempt = 0; Attempt <= Entries.Num(); ++Attempt)
 	{
 		const int32 Candidate = InOutNextEntryID;
@@ -436,6 +452,7 @@ int32 UInventoryComponent::AllocateEntryID(const TArray<FInventoryEntry>& Entrie
 
 bool UInventoryComponent::ValidatePlan(const FInventoryOperationPlan& Plan) const
 {
+	// 先校验数量守恒，阻止 Strategy 返回自相矛盾的“成功数量”。
 	if (Plan.RequestedQuantity < 0 || Plan.PlannedQuantity < 0 || Plan.RemainingQuantity < 0
 		|| Plan.PlannedQuantity > Plan.RequestedQuantity
 		|| Plan.RemainingQuantity != Plan.RequestedQuantity - Plan.PlannedQuantity)
@@ -447,6 +464,7 @@ bool UInventoryComponent::ValidatePlan(const FInventoryOperationPlan& Plan) cons
 		return false;
 	}
 
+	// 同一 Plan 不允许重复修改同一个既有 Entry，避免 Mutation 顺序影响语义。
 	TSet<int32> MutatedEntryIDs;
 	for (const FInventoryEntryMutation& Mutation : Plan.Mutations)
 	{
@@ -474,6 +492,7 @@ bool UInventoryComponent::ValidatePlan(const FInventoryOperationPlan& Plan) cons
 		{
 			return false;
 		}
+		// ExpectedState 是计划阶段拍下的快照；不一致说明计划已经过期。
 		if (FInventoryEntryState(Current.ItemInstance, Current.Quantity) != Mutation.ExpectedState)
 		{
 			return false;
@@ -493,6 +512,7 @@ bool UInventoryComponent::ApplyPlan(
 	int32& InOutNextEntryID,
 	FInventoryChangeSet& OutChangeSet)
 {
+	// 本函数只操作调用者提供的工作副本。它可以失败，但绝不会留下半提交的真实库存。
 	for (const FInventoryEntryMutation& Mutation : Plan.Mutations)
 	{
 		if (Mutation.Type == EInventoryEntryMutationType::Create)
@@ -503,6 +523,7 @@ bool UInventoryComponent::ApplyPlan(
 				return false;
 			}
 			UInventoryItemInstance* DesiredItem = Mutation.DesiredState.ItemInstance;
+			// 新堆叠拥有独立实例，防止未来修改 Instance Tags/Fragment 状态时串改其他堆叠。
 			if (Mutation.bDuplicateItemInstance && IsValid(DesiredItem))
 			{
 				DesiredItem = DuplicateObject<UInventoryItemInstance>(DesiredItem, this);
@@ -558,6 +579,7 @@ bool UInventoryComponent::ApplyPlan(
 
 FInventoryOperationResult UInventoryComponent::ExecutePlan(const FInventoryOperationPlan& Plan)
 {
+	// 单容器操作的统一事务管线：校验 -> 副本执行 -> 一次提交 -> 一次广播。
 	if (Plan.Mutations.IsEmpty())
 	{
 		return MakeFailure(Plan.RequestedQuantity, Plan.FailureReason.IsValid()
@@ -621,6 +643,7 @@ void UInventoryComponent::CommitEntries(
 	const FInventoryChangeSet& ChangeSet,
 	const bool bBroadcast)
 {
+	// MoveTemp 将已经完整验证的工作副本替换为权威状态；此前没有触碰真实数组。
 	EntryArray.ItemEntries = MoveTemp(NewEntries);
 	NextEntryID = NewNextEntryID;
 	for (FInventoryEntry& Entry : EntryArray.ItemEntries)

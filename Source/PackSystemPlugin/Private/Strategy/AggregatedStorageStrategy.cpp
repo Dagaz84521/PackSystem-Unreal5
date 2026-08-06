@@ -6,6 +6,7 @@
 
 namespace
 {
+	// Strategy 只组装数据，不触碰 Component；这些工厂函数统一 Plan 的失败和快照格式。
 	FInventoryOperationPlan MakeFailedPlan(const int64 RequestedQuantity, const FGameplayTag Reason)
 	{
 		FInventoryOperationPlan Plan;
@@ -53,6 +54,8 @@ FInventoryOperationPlan UAggregatedStorageStrategy::BuildAddPlan(
 		return MakeFailedPlan(Request.Quantity, InventoryOperationTags::InvalidQuantity);
 	}
 
+	// Aggregate 中一个“可堆叠等价类”只保留一条记录。指定目标时只检查该记录，
+	// 自动添加时则寻找第一条 CanStackWith 相同的记录。
 	FInventoryEntryHandle StackHandle;
 	FInventoryEntry StackEntry;
 	if (Request.TargetEntry.IsValid())
@@ -86,6 +89,7 @@ FInventoryOperationPlan UAggregatedStorageStrategy::BuildAddPlan(
 	Plan.RequestedQuantity = Request.Quantity;
 	if (StackHandle.IsValid())
 	{
+		// Aggregate 忽略物品定义的 MaxStackSize，唯一容量边界是 int64 可表示范围。
 		const int64 Capacity = MAX_int64 - StackEntry.Quantity;
 		Plan.PlannedQuantity = FMath::Min(Request.Quantity, Capacity);
 		Plan.RemainingQuantity = Request.Quantity - Plan.PlannedQuantity;
@@ -106,6 +110,7 @@ FInventoryOperationPlan UAggregatedStorageStrategy::BuildAddPlan(
 		return Plan;
 	}
 
+	// 没有兼容记录就创建新的聚合记录。复制实例可隔离调用方和库存内的可变状态。
 	Plan.PlannedQuantity = Request.Quantity;
 	FInventoryEntryMutation Mutation;
 	Mutation.Type = EInventoryEntryMutationType::Create;
@@ -138,6 +143,7 @@ FInventoryOperationPlan UAggregatedStorageStrategy::BuildRemoveMatchingPlan(
 		}
 
 		const int64 Removed = FMath::Min(Remaining, Entry.Quantity);
+		// Aggregate 不保存空占位：数量归零必须删除 Entry，因此旧 Handle 随之失效。
 		if (Removed == Entry.Quantity)
 		{
 			Plan.Mutations.Add(MakeDeleteMutation(Handle, Entry));
@@ -208,6 +214,7 @@ FInventoryOperationPlan UAggregatedStorageStrategy::BuildMovePlan(
 	const FInventoryEntryHandle& TargetEntry,
 	const int64 Quantity) const
 {
+	// Aggregate 没有“格子位置”，内部移动、拆分和交换都没有稳定语义。
 	return MakeFailedPlan(Quantity, InventoryOperationTags::UnsupportedOperation);
 }
 
@@ -221,6 +228,7 @@ FInventoryOperationPlan UAggregatedStorageStrategy::BuildSwapPlan(
 
 FInventoryOperationPlan UAggregatedStorageStrategy::BuildClearPlan(const UInventoryComponent& Inventory) const
 {
+	// 清空 Aggregate 等价于删除所有记录，而不是把它们改成空 Entry。
 	FInventoryOperationPlan Plan;
 	for (const FInventoryEntryHandle& Handle : Inventory.GetAllEntryHandles())
 	{

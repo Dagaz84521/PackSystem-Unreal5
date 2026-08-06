@@ -4,6 +4,7 @@
 
 namespace InventoryOperationTags
 {
+	// 固定原生 Tag 让调用方能够稳定地分支处理失败原因，避免比较本地化文本或字符串。
 	PACKSYSTEMPLUGIN_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InvalidItem);
 	PACKSYSTEMPLUGIN_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InvalidQuantity);
 	PACKSYSTEMPLUGIN_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InvalidHandle);

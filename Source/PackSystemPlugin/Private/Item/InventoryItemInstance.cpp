@@ -51,8 +51,8 @@ bool UInventoryItemInstance::CanStackWith(const UInventoryItemInstance* Instance
 		return false;
 	}
 
-	// ItemDefinition是否相同，且拥有相同的Tags
-	// TODO：动态Fragments相同
+	// Definition 决定物品种类，InstanceTags 则区分同一定义下的运行时状态。
+	// 动态 Fragment 状态加入实例后，还需要在这里扩展等价比较。
 	if (InstanceA->ItemDefinition == InstanceB->ItemDefinition && InstanceA->InstanceTags == InstanceB->InstanceTags)
 		return true;
 	return false;

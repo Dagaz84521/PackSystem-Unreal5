@@ -6,16 +6,14 @@
 
 class UInventoryItemInstance;
 
-/**
- * Stateless helper functions shared by inventory Blueprints.
- */
+/** 不保存状态的公共辅助函数，让 C++ 与蓝图使用同一套物品判定规则。 */
 UCLASS()
 class PACKSYSTEMPLUGIN_API UInventoryBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
 public:
-	/** Returns whether two item instances can be stored in the same stack. */
+	/** 是否可放入同一堆叠；实际规则集中在 UInventoryItemInstance::CanStackWith。 */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Item", meta = (DisplayName = "Can Stack Items"))
 	static bool CanStackItems(const UInventoryItemInstance* ItemA, const UInventoryItemInstance* ItemB);
 };

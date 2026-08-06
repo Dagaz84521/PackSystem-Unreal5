@@ -8,6 +8,7 @@
 
 namespace
 {
+	// Slotted Strategy 同样只生成 Mutation；真正写入、实例复制与事件广播由 Component 完成。
 	FInventoryOperationPlan MakeFailedPlan(const int64 RequestedQuantity, const FGameplayTag Reason)
 	{
 		FInventoryOperationPlan Plan;
@@ -34,6 +35,7 @@ namespace
 
 	int64 GetMaxStackSize(const UInventoryItemInstance* ItemInstance)
 	{
+		// Slot 的容量来自物品定义，并强制至少为 1，避免产生“存在但永远放不进去”的物品。
 		const UInventoryItemDefinition* Definition = IsValid(ItemInstance)
 			? ItemInstance->GetItemDefinition()
 			: nullptr;
@@ -64,6 +66,7 @@ FInventoryOperationPlan USlottedStorageStrategy::BuildAddPlan(
 	Plan.RequestedQuantity = Request.Quantity;
 	int64 Remaining = Request.Quantity;
 
+	// 该局部规划器同时处理“填空格”和“补兼容堆叠”，并持续扣减 Remaining。
 	auto PlanIntoEntry = [&](const FInventoryEntryHandle& Handle, const FInventoryEntry& Entry)
 	{
 		if (Remaining <= 0)
@@ -114,6 +117,7 @@ FInventoryOperationPlan USlottedStorageStrategy::BuildAddPlan(
 	else
 	{
 		const TArray<FInventoryEntryHandle> Handles = Inventory.GetAllEntryHandles();
+		// 两遍扫描是有意的：先补满已有堆叠，减少背包碎片，再按稳定格序占用空格。
 		for (const FInventoryEntryHandle& Handle : Handles)
 		{
 			FInventoryEntry Entry;
@@ -169,6 +173,7 @@ FInventoryOperationPlan USlottedStorageStrategy::BuildRemoveMatchingPlan(
 
 		const int64 Removed = FMath::Min(Remaining, Entry.Quantity);
 		const int64 NewQuantity = Entry.Quantity - Removed;
+		// Slot 数量归零时写入空状态，但 Entry 与 Handle 仍然存在。
 		Plan.Mutations.Add(MakeUpdateMutation(
 			Handle,
 			Entry,
@@ -257,6 +262,7 @@ FInventoryOperationPlan USlottedStorageStrategy::BuildMovePlan(
 		return MakeFailedPlan(Quantity, InventoryOperationTags::IncompatibleItem);
 	}
 
+	// Move 只允许移至空格或合并兼容堆叠；不兼容物品必须显式调用 SwapEntries。
 	const int64 TargetCapacity = Target.IsEmpty()
 		? MaxStackSize
 		: FMath::Max<int64>(0, MaxStackSize - Target.Quantity);
@@ -281,6 +287,7 @@ FInventoryOperationPlan USlottedStorageStrategy::BuildMovePlan(
 
 	if (Target.IsEmpty())
 	{
+		// 部分拆分时源堆仍持有原实例，因此目标必须复制；整堆移动则直接转移原实例。
 		Plan.Mutations.Add(MakeUpdateMutation(
 			TargetEntry,
 			Target,
@@ -327,6 +334,7 @@ FInventoryOperationPlan USlottedStorageStrategy::BuildSwapPlan(
 		return MakeFailedPlan(1, InventoryOperationTags::NoChange);
 	}
 
+	// 两条 Update 在同一个 Plan 中提交，所以交换是全有或全无。
 	FInventoryOperationPlan Plan;
 	Plan.RequestedQuantity = 1;
 	Plan.PlannedQuantity = 1;
@@ -337,6 +345,7 @@ FInventoryOperationPlan USlottedStorageStrategy::BuildSwapPlan(
 
 FInventoryOperationPlan USlottedStorageStrategy::BuildClearPlan(const UInventoryComponent& Inventory) const
 {
+	// 清空只重置非空格；固定 Slot 数量及每个格子的 Handle 都保持不变。
 	FInventoryOperationPlan Plan;
 	for (const FInventoryEntryHandle& Handle : Inventory.GetAllEntryHandles())
 	{

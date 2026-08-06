@@ -4,6 +4,10 @@
 #include "Strategy/InventoryStorageStrategy.h"
 #include "AggregatedStorageStrategy.generated.h"
 
+/**
+ * 聚合存储：不存在预创建空格，相同 CanStackWith 物品共享一条动态记录。
+ * MaxStackSize 在此策略中无效，唯一实际容量边界是 int64 上限。
+ */
 UCLASS(DisplayName = "Aggregated Inventory")
 class PACKSYSTEMPLUGIN_API UAggregatedStorageStrategy : public UInventoryStorageStrategy
 {

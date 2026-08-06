@@ -42,7 +42,10 @@ public:
 	/** 由 UInventoryItemDefinition 在创建实例时调用。 */
 	void Initialize(UInventoryItemDefinition* InItemDefinition);
 	
-	/** 判断两个是否可以叠加 */
+	/**
+	 * v1 堆叠等价规则：Definition 与 Instance Tags 必须相同。
+	 * 两种库存 Strategy 都调用这里，避免各自演化出不同的“同一种物品”定义。
+	 */
 	static bool CanStackWith(const UInventoryItemInstance* InstanceA, const UInventoryItemInstance* InstanceB);
 
 private:
@@ -54,6 +57,6 @@ private:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Inventory|Instance", meta = (AllowPrivateAccess = true))
 	FGameplayTagContainer InstanceTags;
 	
-	/*TODO: 动态变化的Fragments*/
+	// TODO: 将来若实例拥有动态 Fragment 状态，CanStackWith 也应比较会影响堆叠等价性的部分。
 	
 };

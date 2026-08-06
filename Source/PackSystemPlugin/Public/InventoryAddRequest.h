@@ -5,6 +5,7 @@
 #include "Item/InventoryItemInstance.h"
 #include "InventoryAddRequest.generated.h"
 
+/** 添加意图；无效 TargetEntry 表示自动放置，有效 TargetEntry 表示只尝试该位置。 */
 USTRUCT(BlueprintType)
 struct PACKSYSTEMPLUGIN_API FInventoryAddRequest
 {
@@ -16,7 +17,7 @@ struct PACKSYSTEMPLUGIN_API FInventoryAddRequest
 	UPROPERTY(BlueprintReadWrite, Category = "Inventory")
 	int64 Quantity = 0;
 	
-	/** Invalid handle means automatic placement. */
+	/** 无效 Handle 表示自动放置。 */
 	UPROPERTY(BlueprintReadWrite, Category = "Inventory")
 	FInventoryEntryHandle TargetEntry;
 };
