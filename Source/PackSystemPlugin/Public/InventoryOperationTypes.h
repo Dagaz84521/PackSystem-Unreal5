@@ -35,7 +35,7 @@ struct PACKSYSTEMPLUGIN_API FInventoryEntryState
 
 	FInventoryEntryState() = default;
 	FInventoryEntryState(UInventoryItemInstance* InItemInstance, const int64 InQuantity)
-		: ItemInstance(InItemInstance), Quantity(InQuantity)
+		 : ItemInstance(InItemInstance), Quantity(InQuantity)
 	{
 	}
 
