@@ -1,0 +1,26 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.PackSystemPlugin.cpp.obj": [
+			"IconFragment.gen.cpp.obj",
+			"InventoryAddContext.gen.cpp.obj",
+			"InventoryAddRequest.gen.cpp.obj",
+			"InventoryAddResult.gen.cpp.obj",
+			"InventoryComponent.gen.cpp.obj",
+			"InventoryEntry.gen.cpp.obj",
+			"InventoryEntryArray.gen.cpp.obj",
+			"InventoryItemDefinition.gen.cpp.obj",
+			"InventoryItemFragment.gen.cpp.obj",
+			"InventoryItemInstance.gen.cpp.obj",
+			"InventoryStorageStrategy.gen.cpp.obj",
+			"PackSystemPlugin.init.gen.cpp.obj",
+			"IconFragment.cpp.obj",
+			"InventoryAddContext.cpp.obj",
+			"InventoryComponent.cpp.obj",
+			"InventoryItemDefinition.cpp.obj",
+			"InventoryItemFragment.cpp.obj",
+			"InventoryItemInstance.cpp.obj",
+			"PackSystemPlugin.cpp.obj"
+		]
+	}
+}

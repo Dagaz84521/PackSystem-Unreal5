@@ -1,0 +1,15 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\unreallab\\packsystem\\plugins\\packsystemplugin\\source\\packsystemplugin\\private\\inventoryitemdefinition.cpp",
+        "ProvidedModule": "",
+        "PCH": "e:\\unreallab\\packsystem\\intermediate\\build\\win64\\x64\\packsystemeditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.h.pch",
+        "Includes": [
+            "e:\\unreallab\\packsystem\\plugins\\packsystemplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\packsystemplugin\\definitions.packsystemplugin.h",
+            "e:\\unreallab\\packsystem\\plugins\\packsystemplugin\\source\\packsystemplugin\\public\\inventoryitemdefinition.h",
+            "e:\\unreallab\\packsystem\\plugins\\packsystemplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\packsystemplugin\\uht\\inventoryitemdefinition.generated.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}
