@@ -44,6 +44,16 @@ struct PACKSYSTEMPLUGIN_API FInventoryEntry
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	int32 EntryID;
 
+	bool IsEmpty() const
+	{
+		return ItemInstance == nullptr && Quantity == 0;
+	}
+
+	bool HasValidState() const
+	{
+		return IsEmpty() || (::IsValid(ItemInstance) && Quantity > 0);
+	}
+
 	bool operator==(const FInventoryEntry& Other) const
 	{
 		return ItemInstance == Other.ItemInstance && Quantity == Other.Quantity && EntryID == Other.EntryID;

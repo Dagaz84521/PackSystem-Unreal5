@@ -60,4 +60,9 @@ struct PACKSYSTEMPLUGIN_API FInventoryEntryHandle
 	bool operator!=(const FInventoryEntryHandle& Other) const { return !(*this == Other); }
 	bool operator==(const FInventoryEntry& Other) const { return EntryID == Other.EntryID; }
 	bool operator!=(const FInventoryEntry& Other) const { return !(*this == Other); }
+
+	bool IsValid() const
+	{
+		return EntryID != INDEX_NONE && ParentInventory != nullptr;
+	}
 };

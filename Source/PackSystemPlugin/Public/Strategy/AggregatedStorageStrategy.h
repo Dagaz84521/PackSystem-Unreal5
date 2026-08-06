@@ -1,22 +1,19 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InventoryStorageStrategy.h"
+#include "Strategy/InventoryStorageStrategy.h"
 #include "AggregatedStorageStrategy.generated.h"
 
-/**
- * 
- */
-UCLASS()
+UCLASS(DisplayName = "Aggregated Inventory")
 class PACKSYSTEMPLUGIN_API UAggregatedStorageStrategy : public UInventoryStorageStrategy
 {
 	GENERATED_BODY()
+
 public:
-	virtual FInventoryAddPlan BuildAddPlan(
-		const UInventoryComponent& Inventory,
-		const FInventoryAddRequest& Request) const override;
-	
-	FInventoryEntryHandle GetCanStackEntryHandle(const UInventoryComponent& Inventory, const UInventoryItemInstance* ItemToStack) const;
+	virtual FInventoryOperationPlan BuildAddPlan(const UInventoryComponent& Inventory, const FInventoryAddRequest& Request) const override;
+	virtual FInventoryOperationPlan BuildRemoveMatchingPlan(const UInventoryComponent& Inventory, const UInventoryItemInstance* ItemInstance, int64 Quantity) const override;
+	virtual FInventoryOperationPlan BuildRemoveFromEntryPlan(const UInventoryComponent& Inventory, const FInventoryEntryHandle& EntryHandle, int64 Quantity) const override;
+	virtual FInventoryOperationPlan BuildMovePlan(const UInventoryComponent& Inventory, const FInventoryEntryHandle& SourceEntry, const FInventoryEntryHandle& TargetEntry, int64 Quantity) const override;
+	virtual FInventoryOperationPlan BuildSwapPlan(const UInventoryComponent& Inventory, const FInventoryEntryHandle& FirstEntry, const FInventoryEntryHandle& SecondEntry) const override;
+	virtual FInventoryOperationPlan BuildClearPlan(const UInventoryComponent& Inventory) const override;
 };

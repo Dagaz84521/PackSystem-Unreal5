@@ -60,7 +60,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Tags")
 	FGameplayTagContainer ItemTags;
 
-	/** 单个物品槽允许保存的最大数量， -1表示没有限制*/
+	/** Slot 策略下单个格子允许保存的最大数量；Aggregate 策略忽略该值。 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Stack", meta = (ClampMin = "1", UIMin = "1"))
 	int32 MaxStackSize = 1;
 
