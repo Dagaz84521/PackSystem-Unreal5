@@ -1,63 +1,40 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Item/InventoryItemInstance.h"
+#include "InventoryItemPayload.h"
 #include "InventoryEntry.generated.h"
 
-class UInventoryComponent;
-
-/**
- * 背包中的一条库存记录。
- * 保存条目标识、数量以及该条目引用的运行时物品实例。
- */
+/** 一条库存记录，包含稳定标识以及可为空的物品内容。 */
 USTRUCT(BlueprintType)
 struct PACKSYSTEMPLUGIN_API FInventoryEntry
 {
 	GENERATED_BODY()
 
-	FInventoryEntry()
-		: ItemInstance(nullptr)
-		, Quantity(0)
-		, EntryID(INDEX_NONE)
-	{
-	}
+	FInventoryEntry() = default;
 
-	FInventoryEntry(UInventoryItemInstance* InItemInstance, int32 InEntryID, int64 InQuantity = 1)
-		: ItemInstance(InItemInstance)
-		, Quantity(FMath::Max<int64>(0, InQuantity))
+	FInventoryEntry(
+		const FInventoryItemPayload& InPayload,
+		const int32 InEntryID)
+		: Payload(InPayload)
 		, EntryID(InEntryID)
 	{
 	}
 
-	/** 当前条目引用的物品实例；为空表示该条目没有物品。 */
+	/** 当前 Entry 保存的物品堆；空 Payload 表示该 Entry 未存放物品。 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
-	TObjectPtr<UInventoryItemInstance> ItemInstance;
+	FInventoryItemPayload Payload;
 
-	/**
-	 * 当前条目中的数量。
-	 * 数量属于库存条目而不是物品实例，因为不同库存策略可以为同一物品设置不同的容量规则。
-	 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (ClampMin = "0"))
-	int64 Quantity = 0;
-
-	/** 条目标识；INDEX_NONE 表示尚未分配有效标识。 */
+	/** Entry 在所属背包内的稳定标识；INDEX_NONE 表示无效。 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
-	int32 EntryID;
+	int32 EntryID = INDEX_NONE;
 
 	bool operator==(const FInventoryEntry& Other) const
 	{
-		return ItemInstance == Other.ItemInstance && Quantity == Other.Quantity && EntryID == Other.EntryID;
+		return Payload == Other.Payload && EntryID == Other.EntryID;
 	}
 
 	bool operator!=(const FInventoryEntry& Other) const
 	{
 		return !(*this == Other);
 	}
-
-protected:
-	/** 拥有该条目的背包组件，不参与保存或网络复制。 */
-	UPROPERTY(Transient, NotReplicated)
-	TObjectPtr<UInventoryComponent> Owner;
-
-	friend class UInventoryComponent;
 };

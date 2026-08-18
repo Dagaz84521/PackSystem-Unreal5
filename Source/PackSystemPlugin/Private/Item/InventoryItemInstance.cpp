@@ -4,6 +4,7 @@
 #include "Item/InventoryItemInstance.h"
 
 #include "Item/InventoryItemDefinition.h"
+#include "UObject/UObjectGlobals.h"
 
 void UInventoryItemInstance::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
 {
@@ -43,7 +44,7 @@ void UInventoryItemInstance::Initialize(UInventoryItemDefinition* InItemDefiniti
 	ItemDefinition = InItemDefinition;
 }
 
-bool UInventoryItemInstance::CanStackWith(const UInventoryItemInstance* InstanceA,
+bool UInventoryItemInstance::IsMatching(const UInventoryItemInstance* InstanceA,
 	const UInventoryItemInstance* InstanceB)
 {
 	if (!IsValid(InstanceA) || !IsValid(InstanceB))
@@ -56,4 +57,10 @@ bool UInventoryItemInstance::CanStackWith(const UInventoryItemInstance* Instance
 	if (InstanceA->ItemDefinition == InstanceB->ItemDefinition && InstanceA->InstanceTags == InstanceB->InstanceTags)
 		return true;
 	return false;
+}
+
+UInventoryItemInstance* UInventoryItemInstance::DuplicateInstance(UObject* Outer) const
+{
+	UObject* InstanceOuter = IsValid(Outer) ? Outer : GetTransientPackage();
+	return DuplicateObject<UInventoryItemInstance>(this, InstanceOuter);
 }

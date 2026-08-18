@@ -37,6 +37,14 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory|Definition")
 	int32 GetMaxStackSize() const { return MaxStackSize; }
 
+	/** 返回物品在 UI 中显示的名称。 */
+	UFUNCTION(BlueprintPure, Category = "Inventory|Display")
+	FText GetDisplayName() const { return DisplayName; }
+
+	/** 返回物品在 UI 中显示的详细说明。 */
+	UFUNCTION(BlueprintPure, Category = "Inventory|Display")
+	FText GetDescription() const { return Description; }
+
 	/** C++ 侧的强类型 Fragment 查找辅助函数。 */
 	template <typename FragmentType>
 	const FragmentType* FindFragment() const

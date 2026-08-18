@@ -43,7 +43,13 @@ public:
 	void Initialize(UInventoryItemDefinition* InItemDefinition);
 	
 	/** 判断两个是否可以叠加 */
-	static bool CanStackWith(const UInventoryItemInstance* InstanceA, const UInventoryItemInstance* InstanceB);
+	static bool IsMatching(const UInventoryItemInstance* InstanceA, const UInventoryItemInstance* InstanceB);
+
+	/**
+	 * 复制当前运行时实例。
+	 * 拆分物品堆时使用，使拆出的物品与原物品堆不共享可变的运行时状态。
+	 */
+	UInventoryItemInstance* DuplicateInstance(UObject* Outer = nullptr) const;
 
 private:
 	/** 当前实例引用的静态定义。 */

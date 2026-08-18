@@ -29,7 +29,7 @@ public class PackSystemPlugin : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"GameplayTags",
-				"StructUtils",
+				"UMG",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -39,6 +39,8 @@ public class PackSystemPlugin : ModuleRules
 			new string[]
 			{
 				// ... add private dependencies that you statically link with here ...	
+				"Slate",
+				"SlateCore"
 			}
 			);
 		
