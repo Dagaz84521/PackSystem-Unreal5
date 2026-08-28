@@ -37,4 +37,9 @@ struct PACKSYSTEMPLUGIN_API FInventoryEntry
 	{
 		return !(*this == Other);
 	}
+
+	bool IsEmpty() const
+	{
+		return !Payload.IsValid();
+	}
 };
