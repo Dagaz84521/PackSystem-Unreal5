@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InventoryEntry.h"
+#include "Core/InventoryEntry.h"
 #include "InventoryEntryArray.generated.h"
 
 class UInventoryComponent;

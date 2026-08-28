@@ -1,14 +1,14 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MVC/Aggregate/InventoryAggregateUIController.h"
+#include "UI/Aggregate/InventoryAggregateUIController.h"
 
-#include "AggregateInventoryComponent.h"
+#include "Inventory/Aggregate/AggregateInventoryComponent.h"
 #include "Fragments/IconFragment.h"
 #include "Item/InventoryItemDefinition.h"
 #include "Item/InventoryItemInstance.h"
-#include "MVC/InventoryEntryViewData.h"
-#include "MVC/Aggregate/InventoryAggregatePanelWidget.h"
+#include "UI/InventoryEntryViewData.h"
+#include "UI/Aggregate/InventoryAggregatePanelWidget.h"
 
 void UInventoryAggregateUIController::Initialize(UAggregateInventoryComponent* InInventory,
 	UInventoryAggregatePanelWidget* InView)

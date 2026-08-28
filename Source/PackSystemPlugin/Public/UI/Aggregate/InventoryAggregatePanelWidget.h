@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "MVC/InventoryEntryViewData.h"
+#include "UI/InventoryEntryViewData.h"
 #include "InventoryAggregatePanelWidget.generated.h"
 
 /** 背包界面请求使用指定 Entry 中物品时触发。 */

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
-#include "InventoryEntryArray.h"
+#include "Core/InventoryEntryArray.h"
 #include "InventoryEntryViewData.generated.h"
 
 USTRUCT(BlueprintType)

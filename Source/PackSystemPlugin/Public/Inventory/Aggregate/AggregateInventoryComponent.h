@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InventoryComponent.h"
-#include "InventoryQuantityOperationResult.h"
+#include "Core/InventoryComponent.h"
+#include "Core/InventoryQuantityOperationResult.h"
 #include "AggregateInventoryComponent.generated.h"
 
 /**

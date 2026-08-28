@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InventoryEntryArray.h"
-#include "InventoryItemPayload.h"
+#include "Core/InventoryEntryArray.h"
+#include "Core/InventoryItemPayload.h"
 #include "UObject/Object.h"
 #include "InventoryAggregateUIController.generated.h"
 

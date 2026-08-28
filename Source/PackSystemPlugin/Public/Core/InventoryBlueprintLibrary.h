@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "InventoryEntryArray.h"
+#include "Core/InventoryEntryArray.h"
 #include "InventoryBlueprintLibrary.generated.h"
 
 struct FInventoryEntryHandle;

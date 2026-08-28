@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InventoryEntryArray.h"
-#include "InventoryItemPayload.h"
+#include "Core/InventoryEntryArray.h"
+#include "Core/InventoryItemPayload.h"
 #include "InventoryQuantityOperationResult.generated.h"
 
 /** 数量类库存操作的执行状态。 */

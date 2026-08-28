@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InventoryItemPayload.h"
+#include "Core/InventoryItemPayload.h"
 #include "InventoryEntry.generated.h"
 
 /** 一条库存记录，包含稳定标识以及可为空的物品内容。 */

@@ -1,6 +1,6 @@
-#include "AggregateInventoryComponent.h"
+#include "Inventory/Aggregate/AggregateInventoryComponent.h"
 
-#include "InventoryBlueprintLibrary.h"
+#include "Core/InventoryBlueprintLibrary.h"
 
 UAggregateInventoryComponent::UAggregateInventoryComponent()
 {

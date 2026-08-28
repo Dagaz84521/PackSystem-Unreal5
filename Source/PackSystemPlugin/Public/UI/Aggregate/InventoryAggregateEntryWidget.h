@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "MVC/InventoryEntryViewData.h"
+#include "UI/InventoryEntryViewData.h"
 #include "InventoryAggregateEntryWidget.generated.h"
 /**
  *  

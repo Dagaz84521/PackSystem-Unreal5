@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MVC/Aggregate/InventoryAggregateEntryWidget.h"
+#include "UI/Aggregate/InventoryAggregateEntryWidget.h"
 
 void UInventoryAggregateEntryWidget::SetViewData(const FInventoryEntryViewData& NewViewData)
 {

@@ -1,4 +1,4 @@
-#include "InventoryBlueprintLibrary.h"
+#include "Core/InventoryBlueprintLibrary.h"
 #include "Item/InventoryItemInstance.h"
 
 bool UInventoryBlueprintLibrary::IsMatching(
