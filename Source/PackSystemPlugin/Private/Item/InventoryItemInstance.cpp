@@ -3,23 +3,11 @@
 
 #include "Item/InventoryItemInstance.h"
 
-#include "Item/InventoryItemDefinition.h"
 #include "UObject/UObjectGlobals.h"
 
 void UInventoryItemInstance::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
 {
-	if (IsValid(ItemDefinition))
-	{
-		ItemDefinition->GetOwnedGameplayTags(TagContainer);
-	}
-
 	TagContainer.AppendTags(InstanceTags);
-}
-
-UInventoryItemFragment* UInventoryItemInstance::FindFragmentByClass(
-	TSubclassOf<UInventoryItemFragment> FragmentClass) const
-{
-	return IsValid(ItemDefinition) ? ItemDefinition->FindFragmentByClass(FragmentClass) : nullptr;
 }
 
 void UInventoryItemInstance::AddInstanceTag(FGameplayTag Tag)
@@ -37,13 +25,6 @@ void UInventoryItemInstance::RemoveInstanceTag(FGameplayTag Tag)
 		InstanceTags.RemoveTag(Tag);
 	}
 }
-
-
-void UInventoryItemInstance::Initialize(UInventoryItemDefinition* InItemDefinition)
-{
-	ItemDefinition = InItemDefinition;
-}
-
 bool UInventoryItemInstance::IsMatching(const UInventoryItemInstance* InstanceA,
 	const UInventoryItemInstance* InstanceB)
 {
@@ -52,11 +33,8 @@ bool UInventoryItemInstance::IsMatching(const UInventoryItemInstance* InstanceA,
 		return false;
 	}
 
-	// ItemDefinition是否相同，且拥有相同的Tags
-	// TODO：动态Fragments相同
-	if (InstanceA->ItemDefinition == InstanceB->ItemDefinition && InstanceA->InstanceTags == InstanceB->InstanceTags)
-		return true;
-	return false;
+	// TODO：加入动态 Fragment 后，也需要比较影响堆叠兼容性的状态。
+	return InstanceA->InstanceTags == InstanceB->InstanceTags;
 }
 
 UInventoryItemInstance* UInventoryItemInstance::DuplicateInstance(UObject* Outer) const

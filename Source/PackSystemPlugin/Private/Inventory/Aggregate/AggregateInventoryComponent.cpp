@@ -21,7 +21,7 @@ FInventoryQuantityOperationResult UAggregateInventoryComponent::AddItem(
 	// AddItem 不修改调用者传入的数据；失败时通过 OutputPayload 返回尚未加入的全部物品。
 	Result.OutputPayload = Payload;
 
-	FInventoryEntryHandle EntryHandle = FindCompatibleEntry(Payload.ItemInstance);
+	FInventoryEntryHandle EntryHandle = FindCompatibleEntry(Payload);
 	if (EntryHandle.IsSet())
 	{
 		const FInventoryEntry* ExistingEntry = FindEntry(EntryHandle);
@@ -38,8 +38,9 @@ FInventoryQuantityOperationResult UAggregateInventoryComponent::AddItem(
 
 		// 聚合时保留目标 Entry 原本的实例，仅增加它所代表的数量。
 		const FInventoryItemPayload MergedPayload(
-			ExistingEntry->Payload.ItemInstance,
-			MergedQuantity);
+			ExistingEntry->Payload.ItemDefinition,
+			MergedQuantity,
+			ExistingEntry->Payload.ItemInstance);
 		if (!SetEntryPayload(EntryHandle, MergedPayload))
 		{
 			return Result;
@@ -64,7 +65,7 @@ FInventoryQuantityOperationResult UAggregateInventoryComponent::AddItem(
 }
 
 FInventoryQuantityOperationResult UAggregateInventoryComponent::ExtractMatchingItem(
-	const UInventoryItemInstance* ItemToMatch,
+	const FInventoryItemPayload& ItemToMatch,
 	const int64 Quantity)
 {
 	FInventoryQuantityOperationResult Result;
@@ -115,23 +116,23 @@ FInventoryQuantityOperationResult UAggregateInventoryComponent::ExtractItemFromE
 	}
 	else
 	{
-		// 部分提取必须复制实例，避免两个独立物品堆共享可变运行时状态。
-		UInventoryItemInstance* ExtractedInstance =
-			OriginalPayload.ItemInstance->DuplicateInstance(GetTransientPackage());
-		if (!IsValid(ExtractedInstance))
+		// 当前只有无实例物品可以形成数量大于 1 的堆叠。
+		if (OriginalPayload.ItemInstance != nullptr)
 		{
 			return Result;
 		}
 
 		const FInventoryItemPayload RemainingPayload(
-			OriginalPayload.ItemInstance,
+			OriginalPayload.ItemDefinition,
 			OriginalPayload.Quantity - ExtractedQuantity);
 		if (!SetEntryPayload(EntryHandle, RemainingPayload))
 		{
 			return Result;
 		}
 
-		Result.OutputPayload = FInventoryItemPayload(ExtractedInstance, ExtractedQuantity);
+		Result.OutputPayload = FInventoryItemPayload(
+			OriginalPayload.ItemDefinition,
+			ExtractedQuantity);
 	}
 
 	Result.Status = ExtractedQuantity == Quantity
@@ -144,9 +145,9 @@ FInventoryQuantityOperationResult UAggregateInventoryComponent::ExtractItemFromE
 }
 
 FInventoryEntryHandle UAggregateInventoryComponent::FindCompatibleEntry(
-	const UInventoryItemInstance* ItemToMatch) const
+	const FInventoryItemPayload& ItemToMatch) const
 {
-	if (!::IsValid(ItemToMatch))
+	if (!ItemToMatch.IsValid())
 	{
 		return {};
 	}
@@ -158,7 +159,7 @@ FInventoryEntryHandle UAggregateInventoryComponent::FindCompatibleEntry(
 			continue;
 		}
 
-		if (UInventoryBlueprintLibrary::IsMatching(ItemToMatch, Entry.Payload.ItemInstance))
+		if (UInventoryBlueprintLibrary::IsMatching(ItemToMatch, Entry.Payload))
 		{
 			return MakeEntryHandle(Entry.EntryID);
 		}

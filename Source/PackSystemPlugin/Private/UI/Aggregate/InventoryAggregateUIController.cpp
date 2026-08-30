@@ -6,7 +6,6 @@
 #include "Inventory/Aggregate/AggregateInventoryComponent.h"
 #include "Fragments/IconFragment.h"
 #include "Item/InventoryItemDefinition.h"
-#include "Item/InventoryItemInstance.h"
 #include "UI/InventoryEntryViewData.h"
 #include "UI/Aggregate/InventoryAggregatePanelWidget.h"
 
@@ -20,13 +19,13 @@ void UInventoryAggregateUIController::Initialize(UAggregateInventoryComponent* I
 		return;
 	}
 	
-	Inventory = InInventory;
 	View = InView;
-	
-	Inventory->OnEntryAdded.AddDynamic(this, &UInventoryAggregateUIController::HandleEntryAdded);
-	Inventory->OnEntryChanged.AddDynamic(this, &UInventoryAggregateUIController::HandleEntryChanged);
-	Inventory->OnEntryRemoved.AddDynamic(this, &UInventoryAggregateUIController::HandleEntryRemoved);
-	Inventory->OnInventoryReset.AddDynamic(this, &ThisClass::HandleInventoryReset);
+	if (!BindInventory(InInventory))
+	{
+		View = nullptr;
+		return;
+	}
+
 	View->OnUseItemRequested.AddDynamic(this, &ThisClass::HandleUseItemRequested);
 	
 	RefreshAllEntries();
@@ -34,29 +33,19 @@ void UInventoryAggregateUIController::Initialize(UAggregateInventoryComponent* I
 
 void UInventoryAggregateUIController::Shutdown()
 {
-	if (IsValid(Inventory))
-	{
-		Inventory->OnEntryAdded.RemoveDynamic(this, &ThisClass::HandleEntryAdded);
-
-		Inventory->OnEntryChanged.RemoveDynamic(this, &ThisClass::HandleEntryChanged);
-
-		Inventory->OnEntryRemoved.RemoveDynamic(this, &ThisClass::HandleEntryRemoved);
-
-		Inventory->OnInventoryReset.RemoveDynamic(this, &ThisClass::HandleInventoryReset);
-	}
-
 	if (IsValid(View))
 	{
 		View->OnUseItemRequested.RemoveDynamic(this, &ThisClass::HandleUseItemRequested);
 	}
 
-	Inventory = nullptr;
 	View = nullptr;
+	Super::Shutdown();
 }
 
-void UInventoryAggregateUIController::HandleEntryAdded(FInventoryEntryHandle EntryHandle)
+void UInventoryAggregateUIController::InventoryEntryAdded(
+	const FInventoryEntryHandle& EntryHandle)
 {
-	if (!IsValid(View) || !IsValid(Inventory))
+	if (!IsValid(View) || !IsValid(GetInventory()))
 	{
 		return;
 	}
@@ -67,9 +56,10 @@ void UInventoryAggregateUIController::HandleEntryAdded(FInventoryEntryHandle Ent
 	}
 }
 
-void UInventoryAggregateUIController::HandleEntryChanged(FInventoryEntryHandle EntryHandle)
+void UInventoryAggregateUIController::InventoryEntryChanged(
+	const FInventoryEntryHandle& EntryHandle)
 {
-	if (!IsValid(View) || !IsValid(Inventory))
+	if (!IsValid(View) || !IsValid(GetInventory()))
 	{
 		return;
 	}
@@ -80,16 +70,17 @@ void UInventoryAggregateUIController::HandleEntryChanged(FInventoryEntryHandle E
 	}
 }
 
-void UInventoryAggregateUIController::HandleEntryRemoved(FInventoryEntryHandle EntryHandle)
+void UInventoryAggregateUIController::InventoryEntryRemoved(
+	const FInventoryEntryHandle& EntryHandle)
 {
-	if (!IsValid(View) || !IsValid(Inventory))
+	if (!IsValid(View) || !IsValid(GetInventory()))
 	{
 		return;
 	}
 	View->RemoveEntry(EntryHandle);
 }
 
-void UInventoryAggregateUIController::HandleInventoryReset()
+void UInventoryAggregateUIController::InventoryReset()
 {
 	RefreshAllEntries();
 }
@@ -101,12 +92,13 @@ void UInventoryAggregateUIController::RefreshAllEntries()
 		return;
 	}
 	TArray<FInventoryEntryViewData> EntriesViewData;
-	if (!IsValid(Inventory))
+	UInventoryComponent* BoundInventory = GetInventory();
+	if (!IsValid(BoundInventory))
 	{
 		View->RebuildEntries(EntriesViewData);
 		return;
 	}
-	const TArray<FInventoryEntryHandle>& InventoryHandles = Inventory->GetAllEntryHandles();
+	const TArray<FInventoryEntryHandle>& InventoryHandles = BoundInventory->GetAllEntryHandles();
 	EntriesViewData.Reserve(InventoryHandles.Num());
 	for (const FInventoryEntryHandle& Handle : InventoryHandles)
 	{
@@ -125,13 +117,14 @@ bool UInventoryAggregateUIController::MakeEntryViewData(const FInventoryEntryHan
 	// 失败时保证输出数据为空，避免调用者使用旧数据。
 	OutViewData = FInventoryEntryViewData();
 
-	if (!IsValid(Inventory))
+	UInventoryComponent* BoundInventory = GetInventory();
+	if (!IsValid(BoundInventory))
 	{
 		return false;
 	}
 
 	FInventoryEntry Entry;
-	if (!Inventory->GetEntry(EntryHandle, Entry))
+	if (!BoundInventory->GetEntry(EntryHandle, Entry))
 	{
 		return false;
 	}
@@ -141,14 +134,7 @@ bool UInventoryAggregateUIController::MakeEntryViewData(const FInventoryEntryHan
 		return false;
 	}
 
-	UInventoryItemInstance* ItemInstance = Entry.Payload.ItemInstance;
-
-	if (!IsValid(ItemInstance))
-	{
-		return false;
-	}
-
-	UInventoryItemDefinition* ItemDefinition = ItemInstance->GetItemDefinition();
+	UInventoryItemDefinition* ItemDefinition = Entry.Payload.ItemDefinition;
 
 	if (!IsValid(ItemDefinition))
 	{
@@ -172,11 +158,13 @@ bool UInventoryAggregateUIController::MakeEntryViewData(const FInventoryEntryHan
 void UInventoryAggregateUIController::HandleUseItemRequested(
 	FInventoryEntryHandle EntryHandle)
 {
-	if (!IsValid(Inventory) || !EntryHandle.IsSet())
+	UAggregateInventoryComponent* AggregateInventory =
+		Cast<UAggregateInventoryComponent>(GetInventory());
+	if (!IsValid(AggregateInventory) || !EntryHandle.IsSet())
 	{
 		return;
 	}
 
 	// 原型阶段不执行物品效果，仅扣除一个数量。
-	Inventory->ExtractItemFromEntry(EntryHandle, 1);
+	AggregateInventory->ExtractItemFromEntry(EntryHandle, 1);
 }

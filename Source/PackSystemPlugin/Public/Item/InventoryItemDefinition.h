@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Core/InventoryItemPayload.h"
 #include "GameplayTagAssetInterface.h"
 #include "Engine/DataAsset.h"
 #include "InventoryItemDefinition.generated.h"
@@ -13,8 +14,8 @@ class UInventoryItemInstance;
 /**
  * 物品的静态定义资产。
  *
- * 同一种物品的名称、描述、标签和 Fragment 配置只保存一份；背包中的每个
- * 运行时物品则使用 UInventoryItemInstance 引用该定义，避免重复静态数据。
+ * 同一种物品的名称、描述、标签和 Fragment 配置只保存一份。普通物品只需要
+ * Definition 和数量；任一 Fragment 声明需要动态状态时，物品才创建可选实例。
  */
 UCLASS(BlueprintType)
 class PACKSYSTEMPLUGIN_API UInventoryItemDefinition : public UPrimaryDataAsset, public IGameplayTagAssetInterface
@@ -29,13 +30,21 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory|Definition", meta = (DeterminesOutputType = "FragmentClass"))
 	UInventoryItemFragment* FindFragmentByClass(TSubclassOf<UInventoryItemFragment> FragmentClass) const;
 
-	/** 创建并初始化一个引用当前定义的运行时物品实例。 */
+	/** 根据当前定义创建 Payload；无状态物品不会创建 ItemInstance。 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Definition", meta = (DefaultToSelf = "Outer"))
+	FInventoryItemPayload CreateItemPayload(int64 Quantity, UObject* Outer) const;
+
+	/** 当前定义是否要求每件物品携带独立的运行时实例。 */
+	UFUNCTION(BlueprintPure, Category = "Inventory|Definition")
+	bool RequiresItemInstance() const;
+
+	/** 创建并初始化运行时实例；无状态定义返回 nullptr。 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Definition", meta = (DefaultToSelf = "Outer"))
 	UInventoryItemInstance* CreateItemInstance(UObject* Outer) const;
 
 	/** 返回单个物品槽允许保存的最大数量。 */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Definition")
-	int32 GetMaxStackSize() const { return MaxStackSize; }
+	int32 GetMaxStackSize() const;
 
 	/** 返回物品在 UI 中显示的名称。 */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Display")
@@ -68,7 +77,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Tags")
 	FGameplayTagContainer ItemTags;
 
-	/** 单个物品槽允许保存的最大数量， -1表示没有限制*/
+	/** 无实例物品在单个槽位允许保存的最大数量。 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Stack", meta = (ClampMin = "1", UIMin = "1"))
 	int32 MaxStackSize = 1;
 

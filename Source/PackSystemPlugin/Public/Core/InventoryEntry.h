@@ -40,6 +40,6 @@ struct PACKSYSTEMPLUGIN_API FInventoryEntry
 
 	bool IsEmpty() const
 	{
-		return !Payload.IsValid();
+		return Payload.IsEmpty();
 	}
 };

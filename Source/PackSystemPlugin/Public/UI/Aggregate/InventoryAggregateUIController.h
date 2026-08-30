@@ -3,9 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Core/InventoryEntryArray.h"
-#include "Core/InventoryItemPayload.h"
-#include "UObject/Object.h"
+#include "UI/InventoryUIControllerBase.h"
 #include "InventoryAggregateUIController.generated.h"
 
 struct FInventoryEntryViewData;
@@ -15,37 +13,27 @@ class UAggregateInventoryComponent;
  * 
  */
 UCLASS(BlueprintType, Blueprintable)
-class PACKSYSTEMPLUGIN_API UInventoryAggregateUIController : public UObject
+class PACKSYSTEMPLUGIN_API UInventoryAggregateUIController : public UInventoryUIControllerBase
 {
 	GENERATED_BODY()
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory|UI")
 	void Initialize(UAggregateInventoryComponent* InInventory, UInventoryAggregatePanelWidget* InView);
-	UFUNCTION(BlueprintCallable, Category = "Inventory|UI")
-	void Shutdown();
+
+	virtual void Shutdown() override;
+
+protected:
+	virtual void InventoryEntryAdded(const FInventoryEntryHandle& EntryHandle) override;
+	virtual void InventoryEntryChanged(const FInventoryEntryHandle& EntryHandle) override;
+	virtual void InventoryEntryRemoved(const FInventoryEntryHandle& EntryHandle) override;
+	virtual void InventoryReset() override;
 
 private:
-	/** 当前 UI 观察的背包 Model。 */
-	UPROPERTY()
-	TObjectPtr<UAggregateInventoryComponent> Inventory;
-
 	/** 当前绑定的 View。 */
 	UPROPERTY()
 	TObjectPtr<UInventoryAggregatePanelWidget> View;
 	
-	UFUNCTION()
-	void HandleEntryAdded(FInventoryEntryHandle EntryHandle);
-
-	UFUNCTION()
-	void HandleEntryChanged(FInventoryEntryHandle EntryHandle);
-
-	UFUNCTION()
-	void HandleEntryRemoved(FInventoryEntryHandle EntryHandle);
-
-	UFUNCTION()
-	void HandleInventoryReset();
-
 	/** 响应界面发出的使用物品请求。 */
 	UFUNCTION()
 	void HandleUseItemRequested(FInventoryEntryHandle EntryHandle);

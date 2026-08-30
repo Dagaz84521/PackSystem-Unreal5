@@ -22,6 +22,15 @@ class PACKSYSTEMPLUGIN_API UInventoryItemFragment : public UObject
 
 public:
 	/**
+	 * 当前 Fragment 是否要求每件物品拥有独立的运行时实例。
+	 * 仅保存静态配置的 Fragment 保持默认 false；耐久度等动态 Fragment 应覆写为 true。
+	 */
+	UFUNCTION(BlueprintNativeEvent, BlueprintPure, Category = "Inventory|Fragment")
+	bool RequiresItemInstance() const;
+
+	virtual bool RequiresItemInstance_Implementation() const;
+
+	/**
 	 * 当定义创建出一个运行时物品实例后调用。
 	 * 派生 Fragment 可在此向实例写入初始状态；蓝图 Fragment 也可以覆写该事件。
 	 */

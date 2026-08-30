@@ -149,7 +149,8 @@
 **操作规则**
 
 - 拿起全部数量时，来源格子清空，Cursor Payload 接收原 Item Instance 和全部数量。
-- 拿起部分数量时，来源保留原 Item Instance 并减少数量；Cursor Payload 使用 DuplicateInstance 创建独立实例。
+- 拿起部分数量只适用于没有 Item Instance 的普通堆叠；来源与 Cursor 共享同一个 Definition，只拆分数量，不创建 UObject。
+- 带有独立 Item Instance 的物品当前数量固定为 1，只能完整拿起。
 - 指定数量必须完整满足，不允许部分成功。
 - 成功后记录 Origin Inventory 和 Origin Entry Handle。
 - UI 只负责提交拿起请求和显示 Cursor Payload，不直接修改格子。
@@ -176,7 +177,7 @@
 | 来源格子为空 | 不改变状态 |
 | 请求数量小于等于 0 | 不改变状态 |
 | 请求数量大于来源数量 | 不改变状态 |
-| 部分拿起时复制 Item Instance 失败 | 不改变状态 |
+| 尝试部分拿起带 Item Instance 的物品 | 不改变状态 |
 
 **操作结果需要提供的信息**
 
@@ -203,7 +204,8 @@
 - 拿起数量 1 的完整物品堆。
 - Cursor 非空时再次拿起，失败。
 - 请求 0、负数或超过来源数量，失败。
-- 部分拿起后两堆数量守恒且 Item Instance 相互独立。
+- 普通物品部分拿起后两堆数量守恒、Definition 相同且均没有 Item Instance。
+- 带 Item Instance 的物品不能部分拿起。
 - 完整拿起后来源格子保持有效但 Payload 为空。
 
 #### INV-002 将鼠标物品放入空格
@@ -602,7 +604,7 @@ Cursor = 空
 
 - 来源：世界中的物品对象
 - 目标：玩家背包
-- 物品：世界物品所代表的 Item Definition 或 Item Instance
+- 物品：世界物品所代表的 Definition、可选 Item Instance 与数量
 - 数量：世界物品当前可拾取数量
 - 指定格子：无，交由背包自动选择
 
@@ -1390,64 +1392,7 @@ Cursor = 空
 
 ### 操作结果类型
 
-现有 `FInventoryQuantityOperationResult` 可以继续表示提取、自动放入和合并。为了满足用例中的失败信息，建议给它增加统一的 `FailureReason` 字段。
-
-定点放置还需要一个新结果类型。它必须能表示放入空格、完全或部分合并、交换，以及操作后鼠标应该继续持有什么。
-
-```cpp
-UENUM(BlueprintType)
-enum class EInventoryOperationFailureReason : uint8
-{
-	None,
-	InvalidPayload,
-	InvalidSlot,
-	InvalidQuantity,
-	SourceEmpty,
-	CursorEmpty,
-	CursorOccupied,
-	ItemRejected,
-	TargetFull,
-	NoAvailableSpace
-};
-
-UENUM(BlueprintType)
-enum class EInventorySlotPlacementAction : uint8
-{
-	None,
-	Placed,
-	Merged,
-	Swapped
-};
-
-USTRUCT(BlueprintType)
-struct FInventorySlotPlacementResult
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadOnly)
-	EInventoryQuantityOperationStatus Status;
-
-	UPROPERTY(BlueprintReadOnly)
-	EInventorySlotPlacementAction Action;
-
-	UPROPERTY(BlueprintReadOnly)
-	EInventoryOperationFailureReason FailureReason;
-
-	UPROPERTY(BlueprintReadOnly)
-	int64 RequestedQuantity = 0;
-
-	UPROPERTY(BlueprintReadOnly)
-	int64 ChangedQuantity = 0;
-
-	UPROPERTY(BlueprintReadOnly)
-	FInventoryItemPayload CursorPayloadAfter;
-
-	UPROPERTY(BlueprintReadOnly)
-	FInventoryEntryHandle AffectedSlot;
-};
-```
-
-`CursorPayloadAfter` 的含义保持固定：
+现有 `FInventoryQuantityOperationResult` 继续统一表示提取、自动放入、合并和交换，不再增加 `FInventorySlotPlacementResult`。其中 `OutputPayload` 在定点放置时表示操作后的 Cursor Payload：
 
 - 放入空格或完全合并后为空。
 - 部分合并后保存未能放入的剩余部分。
@@ -1463,7 +1408,6 @@ struct FInventorySlotPlacementResult
 | UI 初始化 | 查询固定格子数量 | 无 | Slot 数量 | `GetSlotCount` |
 | UI 初始化 | 根据顺序查询格子 | Slot Index | Entry Handle | `GetSlotHandle` |
 | INV-002 | 判断格子是否为空 | Slot Handle | bool | `IsSlotEmpty` |
-| INV-002 至 INV-004 | 预判 Cursor 在目标格的行为 | Slot Handle、Payload | 放置、合并、交换或失败 | `CanPlaceItemAtSlot` |
 | INV-001 | 从指定格子提取完整或部分物品 | Slot Handle、Quantity | 数量操作结果及提取 Payload | `ExtractItemFromSlot` |
 | INV-002 至 INV-004 | 将 Cursor Payload 应用到指定格子 | Slot Handle、Payload | 放置结果及新的 Cursor Payload | `PlaceItemAtSlot` |
 | INV-005 | 自动放入相容堆叠和空格，优先指定来源格 | Payload、Preferred Slot | 数量操作结果及剩余 Payload | `AddItem` |
@@ -1480,20 +1424,13 @@ FInventoryEntryHandle GetSlotHandle(int32 SlotIndex) const;
 UFUNCTION(BlueprintPure, Category = "Inventory|Slotted")
 bool IsSlotEmpty(const FInventoryEntryHandle& SlotHandle) const;
 
-UFUNCTION(BlueprintPure, Category = "Inventory|Slotted")
-bool CanPlaceItemAtSlot(
-	const FInventoryEntryHandle& SlotHandle,
-	const FInventoryItemPayload& Payload,
-	EInventorySlotPlacementAction& OutAction,
-	EInventoryOperationFailureReason& OutFailureReason) const;
-
 UFUNCTION(BlueprintCallable, Category = "Inventory|Slotted")
 FInventoryQuantityOperationResult ExtractItemFromSlot(
 	const FInventoryEntryHandle& SlotHandle,
 	int64 Quantity);
 
 UFUNCTION(BlueprintCallable, Category = "Inventory|Slotted")
-FInventorySlotPlacementResult PlaceItemAtSlot(
+FInventoryQuantityOperationResult PlaceItemAtSlot(
 	const FInventoryEntryHandle& SlotHandle,
 	const FInventoryItemPayload& CursorPayload);
 
@@ -1548,7 +1485,7 @@ public:
 		int64 Quantity);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Interaction")
-	FInventorySlotPlacementResult PlaceHeldItemAtSlot(
+	FInventoryQuantityOperationResult PlaceHeldItemAtSlot(
 		const FInventoryEntryHandle& TargetSlot);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Interaction")
@@ -1601,6 +1538,8 @@ private:
 - Cursor Payload 必须始终为空或满足有效 Payload 约束。
 - 同一件 Item Instance 不能同时存在于 Cursor 和任何格子中。
 - 关闭或销毁 Widget 不能导致 Cursor Payload 丢失。
+- 有效 Payload 必须始终拥有 Item Definition。
+- 当前模型中，带 Item Instance 的 Payload 数量必须为 1。
 
 ## 目前需要逐步决定的问题
 

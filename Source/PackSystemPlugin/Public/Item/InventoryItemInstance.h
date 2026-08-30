@@ -7,12 +7,11 @@
 #include "UObject/NoExportTypes.h"
 #include "InventoryItemInstance.generated.h"
 
-class UInventoryItemDefinition;
-class UInventoryItemFragment;
-
 /**
- * 背包中物品的运行时实例。
- * 实例引用一个静态 UInventoryItemDefinition，并只保存会在游戏过程中变化的数据，例如实例标签和当前堆叠数量。
+ * 物品可选的运行时动态状态。
+ *
+ * 物品类型由 FInventoryItemPayload 中的 UInventoryItemDefinition 表示；该对象只保存
+ * 耐久度、随机词条、运行时标签等会在游戏过程中变化的数据。
  */
 UCLASS(BlueprintType)
 class PACKSYSTEMPLUGIN_API UInventoryItemInstance : public UObject, public IGameplayTagAssetInterface
@@ -20,16 +19,8 @@ class PACKSYSTEMPLUGIN_API UInventoryItemInstance : public UObject, public IGame
 	GENERATED_BODY()
 
 public:
-	/** 返回“定义标签 + 实例标签”的合集。 */
+	/** 返回当前实例拥有的动态标签。 */
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
-
-	/** 返回该实例使用的静态物品定义。 */
-	UFUNCTION(BlueprintPure, Category = "Inventory|Instance")
-	UInventoryItemDefinition* GetItemDefinition() const { return ItemDefinition; }
-
-	/** 从物品定义中查找指定类型的 Fragment。 */
-	UFUNCTION(BlueprintPure, Category = "Inventory|Instance", meta = (DeterminesOutputType = "FragmentClass"))
-	UInventoryItemFragment* FindFragmentByClass(TSubclassOf<UInventoryItemFragment> FragmentClass) const;
 
 	/** 为当前实例添加一个运行时标签。 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Instance")
@@ -39,23 +30,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Instance")
 	void RemoveInstanceTag(FGameplayTag Tag);
 	
-	/** 由 UInventoryItemDefinition 在创建实例时调用。 */
-	void Initialize(UInventoryItemDefinition* InItemDefinition);
-	
-	/** 判断两个是否可以叠加 */
+	/** 判断两个动态实例是否具有相同的可堆叠状态。 */
 	static bool IsMatching(const UInventoryItemInstance* InstanceA, const UInventoryItemInstance* InstanceB);
 
 	/**
-	 * 复制当前运行时实例。
-	 * 拆分物品堆时使用，使拆出的物品与原物品堆不共享可变的运行时状态。
+	 * 显式复制当前动态状态。
+	 * 当前有实例物品的数量固定为 1，普通堆叠拆分不会调用该函数。
 	 */
 	UInventoryItemInstance* DuplicateInstance(UObject* Outer = nullptr) const;
 
 private:
-	/** 当前实例引用的静态定义。 */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Inventory|Instance", meta = (AllowPrivateAccess = true))
-	TObjectPtr<UInventoryItemDefinition> ItemDefinition;
-
 	/** 仅属于当前实例、可在运行时变化的标签。 */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Inventory|Instance", meta = (AllowPrivateAccess = true))
 	FGameplayTagContainer InstanceTags;

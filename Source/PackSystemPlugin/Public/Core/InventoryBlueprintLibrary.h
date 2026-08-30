@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Core/InventoryItemPayload.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Core/InventoryEntryArray.h"
 #include "InventoryBlueprintLibrary.generated.h"
 
 struct FInventoryEntryHandle;
-class UInventoryItemInstance;
 
 /**
  * Stateless helper functions shared by inventory Blueprints.
@@ -17,9 +17,9 @@ class PACKSYSTEMPLUGIN_API UInventoryBlueprintLibrary : public UBlueprintFunctio
 	GENERATED_BODY()
 
 public:
-	/** Returns whether two item instances can be stored in the same stack. */
+	/** 返回两个 Payload 是否可以保存在同一个物品堆中。 */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Item", meta = (DisplayName = "Can Stack Items"))
-	static bool IsMatching(const UInventoryItemInstance* ItemA, const UInventoryItemInstance* ItemB);
+	static bool IsMatching(const FInventoryItemPayload& ItemA, const FInventoryItemPayload& ItemB);
 	
 	/** 判断两个 EntryHandle 是否指向同一个背包中的同一个 Entry。 */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Entry",

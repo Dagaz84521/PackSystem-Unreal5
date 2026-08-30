@@ -29,11 +29,68 @@ UInventoryItemFragment* UInventoryItemDefinition::FindFragmentByClass(
 	return nullptr;
 }
 
+bool UInventoryItemDefinition::RequiresItemInstance() const
+{
+	for (const UInventoryItemFragment* Fragment : Fragments)
+	{
+		if (IsValid(Fragment) && Fragment->RequiresItemInstance())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int32 UInventoryItemDefinition::GetMaxStackSize() const
+{
+	return RequiresItemInstance() ? 1 : FMath::Max(1, MaxStackSize);
+}
+
+FInventoryItemPayload UInventoryItemDefinition::CreateItemPayload(
+	const int64 Quantity,
+	UObject* Outer) const
+{
+	if (Quantity <= 0)
+	{
+		return {};
+	}
+
+	UInventoryItemInstance* Instance = nullptr;
+	if (RequiresItemInstance())
+	{
+		// 当前模型把 Instance 定义为单件物品的独立状态。
+		if (Quantity != 1)
+		{
+			return {};
+		}
+
+		Instance = CreateItemInstance(Outer);
+		if (!IsValid(Instance))
+		{
+			return {};
+		}
+	}
+
+	return FInventoryItemPayload(
+		const_cast<UInventoryItemDefinition*>(this),
+		Quantity,
+		Instance);
+}
+
 UInventoryItemInstance* UInventoryItemDefinition::CreateItemInstance(UObject* Outer) const
 {
+	if (!RequiresItemInstance())
+	{
+		return nullptr;
+	}
+
 	UObject* InstanceOuter = IsValid(Outer) ? Outer : GetTransientPackage();
 	UInventoryItemInstance* Instance = NewObject<UInventoryItemInstance>(InstanceOuter);
-	Instance->Initialize(const_cast<UInventoryItemDefinition*>(this));
+	if (!IsValid(Instance))
+	{
+		return nullptr;
+	}
 
 	for (const UInventoryItemFragment* Fragment : Fragments)
 	{
