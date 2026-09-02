@@ -13,8 +13,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FInventoryHeldPayloadChangedDelegate);
 /**
  * 一次 Slotted Inventory 鼠标交互会话。
  *
- * Context 独立于 Widget，负责保存鼠标当前持有的 Payload 及其来源。它应由
- * PlayerController、HUD 或长期存在的 UI Manager 持有，避免关闭 Widget 时丢失物品。
+ * Context 独立于具体 Widget，负责保存鼠标当前持有的 Payload 及其来源。
+ * 玩家 Slotted Inventory UIController 创建并持有它；箱子、装备等参与同一次
+ * 鼠标交互的 UIController 只共享引用，不应分别创建自己的 Context。
  */
 UCLASS(BlueprintType, Blueprintable)
 class PACKSYSTEMPLUGIN_API UInventoryInteractionContext : public UObject

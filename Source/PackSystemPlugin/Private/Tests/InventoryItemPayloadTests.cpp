@@ -11,6 +11,7 @@
 #include "Inventory/Slotted/SlottedInventoryComponent.h"
 #include "Item/InventoryItemDefinition.h"
 #include "Item/InventoryItemInstance.h"
+#include "UI/Slotted/InventorySlottedUIController.h"
 #include "UObject/UnrealType.h"
 
 namespace
@@ -455,6 +456,66 @@ bool FInventoryInteractionContextTest::RunTest(const FString& Parameters)
 	SourceOwner->Destroy();
 	TargetOwner->Destroy();
 	PartialOwner->Destroy();
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FInventorySlottedUIControllerInitializationTest,
+	"PackSystem.Inventory.UI.SlottedControllerInitialization",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FInventorySlottedUIControllerInitializationTest::RunTest(
+	const FString& Parameters)
+{
+	UWorld* World = FindInventoryTestWorld();
+	if (!TestNotNull(TEXT("An editor or game world is available"), World))
+	{
+		return false;
+	}
+
+	AActor* Owner = nullptr;
+	USlottedInventoryComponent* Inventory =
+		CreateRegisteredSlottedInventory(World, 4, Owner);
+	if (!TestNotNull(TEXT("A slotted inventory can be created"), Inventory))
+	{
+		return false;
+	}
+
+	UInventorySlottedUIController* Controller =
+		NewObject<UInventorySlottedUIController>();
+	Controller->Initialize(Inventory);
+
+	TestEqual(
+		TEXT("Initialize binds the slotted inventory"),
+		Controller->GetSlottedInventory(),
+		Inventory);
+	UInventoryInteractionContext* InitialContext =
+		Controller->GetInteractionContext();
+	TestNotNull(TEXT("Initialize creates an interaction context"), InitialContext);
+	if (InitialContext != nullptr)
+	{
+		TestEqual(
+			TEXT("The controller owns its interaction context"),
+			InitialContext->GetOuter(),
+			static_cast<UObject*>(Controller));
+	}
+
+	Controller->Initialize(Inventory);
+	TestEqual(
+		TEXT("Repeated initialization preserves the shared context"),
+		Controller->GetInteractionContext(),
+		InitialContext);
+
+	Controller->Shutdown();
+	TestNull(
+		TEXT("Shutdown unbinds the inventory"),
+		Controller->GetSlottedInventory());
+	TestEqual(
+		TEXT("Shutdown preserves the controller-owned context"),
+		Controller->GetInteractionContext(),
+		InitialContext);
+
+	Owner->Destroy();
 	return true;
 }
 
