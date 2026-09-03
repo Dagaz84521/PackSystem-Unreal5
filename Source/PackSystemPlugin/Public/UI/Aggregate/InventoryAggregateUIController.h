@@ -6,7 +6,7 @@
 #include "UI/InventoryUIControllerBase.h"
 #include "InventoryAggregateUIController.generated.h"
 
-struct FInventoryEntryViewData;
+struct FInventoryAggregateEntryViewData;
 class UInventoryAggregatePanelWidget;
 class UAggregateInventoryComponent;
 /**
@@ -40,5 +40,5 @@ private:
 	
 	void RefreshAllEntries();
 
-	bool MakeEntryViewData(const FInventoryEntryHandle& EntryHandle, FInventoryEntryViewData& OutViewData) const;
+	bool MakeEntryViewData(const FInventoryEntryHandle& EntryHandle, FInventoryAggregateEntryViewData& OutViewData) const;
 };

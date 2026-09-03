@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
 #include "Core/InventoryEntryArray.h"
-#include "InventoryEntryViewData.generated.h"
+#include "InventorySlottedEntryViewData.generated.h"
 
 USTRUCT(BlueprintType)
-struct FInventoryEntryViewData
+struct FInventorySlottedEntryViewData
 {
 	GENERATED_BODY()
 
@@ -28,9 +28,9 @@ struct FInventoryEntryViewData
 	UPROPERTY(BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> Icon;
 	
-	FInventoryEntryViewData() = default;
+	FInventorySlottedEntryViewData() = default;
 	
-	FInventoryEntryViewData(const FInventoryEntryHandle& EntryHandle, 
+	FInventorySlottedEntryViewData(const FInventoryEntryHandle& EntryHandle, 
 		const FText& DisplayName, const FText& Description, int64 Quantity, TSoftObjectPtr<UTexture2D> Icon = nullptr)
 			: EntryHandle(EntryHandle), DisplayName(DisplayName), Description(Description), Quantity(Quantity), Icon(Icon){};
 };

@@ -3,7 +3,7 @@
 
 #include "UI/Aggregate/InventoryAggregateEntryWidget.h"
 
-void UInventoryAggregateEntryWidget::SetViewData(const FInventoryEntryViewData& NewViewData)
+void UInventoryAggregateEntryWidget::SetViewData(const FInventoryAggregateEntryViewData& NewViewData)
 {
 	ViewData = NewViewData;
 	RefreshView();

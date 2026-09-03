@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Slotted Inventory UI Concept</title>
+  <style>
+    :root {
+      --ink: #191d1a;
+      --panel: #252b27;
+      --panel-2: #313832;
+      --line: #697367;
+      --paper: #e4ddc8;
+      --paper-ink: #262b26;
+      --moss: #768b49;
+      --moss-light: #b8ca75;
+      --gold: #e2bd58;
+      --danger: #b75946;
+      --slot: rgba(18, 22, 19, 0.88);
+      --slot-size: 58px;
+      --gap: 6px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      color: #eef1e7;
+      background: #151916;
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button { font: inherit; }
+
+    .workspace {
+      width: min(1560px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 22px 0 32px;
+    }
+
+    .workspace-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 14px;
+    }
+
+    .workspace-header h1 {
+      margin: 0;
+      font-family: Georgia, "Microsoft YaHei", serif;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .workspace-header p {
+      margin: 5px 0 0;
+      color: #aeb8ad;
+      font-size: 13px;
+    }
+
+    .status-key {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #bac3b8;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .status-key span::before {
+      content: "";
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin-right: 6px;
+      border: 1px solid #0c0e0c;
+      vertical-align: -1px;
+    }
+
+    .status-key .persistent::before { background: var(--moss-light); }
+    .status-key .temporary::before { background: var(--gold); }
+
+    .design-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .game-shell {
+      overflow: hidden;
+      border: 1px solid #424b43;
+      background: #0f1210;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+    }
+
+    .game-viewport {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #58633c url("slotted-inventory-backdrop.png") center / cover no-repeat;
+      cursor: default;
+      isolation: isolate;
+    }
+
+    .game-viewport::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: rgba(12, 17, 13, 0.08);
+      pointer-events: none;
+    }
+
+    .mock-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 12px;
+      color: #9fa99e;
+      background: #202521;
+      border-top: 1px solid #3b433c;
+      font-size: 11px;
+    }
+
+    .inventory-panel {
+      position: absolute;
+      left: 50%;
+      z-index: 2;
+      transform: translateX(-50%);
+    }
+
+    .chest-panel {
+      bottom: 132px;
+      min-width: 314px;
+      padding: 8px 12px 12px;
+      color: var(--paper);
+      background: rgba(35, 41, 36, 0.96);
+      border: 2px solid #171b18;
+      box-shadow: 0 0 0 2px #69705d, 0 8px 18px rgba(0, 0, 0, 0.42);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 28px;
+      margin-bottom: 7px;
+      border-bottom: 1px solid #5b6459;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-family: Georgia, "Microsoft YaHei", serif;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .panel-title small {
+      color: #9da69a;
+      font-family: "Microsoft YaHei", sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+    }
+
+    .icon-button {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      place-items: center;
+      color: #d7ddcf;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      font-size: 21px;
+      line-height: 1;
+    }
+
+    .icon-button:hover,
+    .icon-button:focus-visible {
+      color: #fff;
+      background: #3b443c;
+      outline: 1px solid var(--moss-light);
+    }
+
+    .slot-grid {
+      display: grid;
+      grid-template-columns: repeat(4, var(--slot-size));
+      gap: var(--gap);
+    }
+
+    .hotbar-wrap {
+      bottom: 25px;
+      display: flex;
+      align-items: end;
+      gap: 9px;
+    }
+
+    .hotbar {
+      display: grid;
+      grid-template-columns: repeat(12, var(--slot-size));
+      gap: var(--gap);
+      padding: 8px;
+      background: rgba(28, 34, 29, 0.96);
+      border: 2px solid #171b18;
+      box-shadow: 0 0 0 2px #727864, 0 8px 18px rgba(0, 0, 0, 0.5);
+    }
+
+    .inventory-slot {
+      position: relative;
+      display: grid;
+      width: var(--slot-size);
+      height: var(--slot-size);
+      padding: 0;
+      place-items: center;
+      color: #e6eadf;
+      background: var(--slot);
+      border: 1px solid #778075;
+      box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.42);
+      cursor: pointer;
+      transition: border-color 160ms ease, background-color 160ms ease;
+    }
+
+    .inventory-slot:hover,
+    .inventory-slot:focus-visible {
+      background: rgba(52, 61, 52, 0.96);
+      border-color: #d8dfbd;
+      outline: 2px solid rgba(216, 223, 189, 0.38);
+      outline-offset: 1px;
+    }
+
+    .inventory-slot.selected {
+      background: rgba(58, 67, 45, 0.98);
+      border-color: var(--gold);
+      outline: 2px solid rgba(226, 189, 88, 0.45);
+      outline-offset: 1px;
+    }
+
+    .inventory-slot.empty .item-mark { display: none; }
+
+    .inventory-slot.disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    .item-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      color: #171a17;
+      background: var(--item-color, #a7b67a);
+      border: 2px solid #252b25;
+      border-radius: 50%;
+      font-family: Georgia, "Microsoft YaHei", serif;
+      font-size: 18px;
+      font-weight: 800;
+      text-shadow: 0 1px rgba(255, 255, 255, 0.24);
+      transform: rotate(-2deg);
+    }
+
+    .quantity {
+      position: absolute;
+      right: 3px;
+      bottom: 1px;
+      min-width: 18px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: right;
+      text-shadow: -1px -1px #000, 1px -1px #000, -1px 1px #000, 1px 1px #000;
+    }
+
+    .key-hint {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      color: #9aa497;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .durability {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      left: 4px;
+      height: 3px;
+      background: #181b18;
+    }
+
+    .durability > span {
+      display: block;
+      width: var(--durability, 70%);
+      height: 100%;
+      background: var(--moss-light);
+    }
+
+    .held-payload {
+      position: absolute;
+      left: 62%;
+      top: 54%;
+      z-index: 8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px 5px 5px;
+      color: #f3f0df;
+      background: rgba(24, 29, 25, 0.92);
+      border: 1px solid var(--gold);
+      box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      transform: translate(14px, 14px);
+    }
+
+    .held-payload.hidden { display: none; }
+
+    .held-payload .item-mark {
+      width: 32px;
+      height: 32px;
+      font-size: 15px;
+    }
+
+    .held-copy strong {
+      display: block;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .held-copy span {
+      color: #c7cebd;
+      font-size: 9px;
+    }
+
+    .item-tooltip {
+      position: absolute;
+      z-index: 7;
+      width: 186px;
+      padding: 10px 11px;
+      color: var(--paper-ink);
+      background: var(--paper);
+      border: 1px solid #191d1a;
+      box-shadow: 3px 4px 0 rgba(24, 29, 25, 0.65);
+      pointer-events: none;
+    }
+
+    .item-tooltip.hidden { display: none; }
+
+    .item-tooltip strong {
+      display: block;
+      margin-bottom: 4px;
+      font-family: Georgia, "Microsoft YaHei", serif;
+      font-size: 13px;
+    }
+
+    .item-tooltip p {
+      margin: 0;
+      color: #4f574d;
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .callout {
+      position: absolute;
+      z-index: 10;
+      display: grid;
+      width: 20px;
+      height: 20px;
+      place-items: center;
+      color: #151815;
+      background: var(--gold);
+      border: 1px solid #151815;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+      font-size: 10px;
+      font-weight: 900;
+      pointer-events: none;
+    }
+
+    .callout.chest { top: -10px; left: -10px; }
+    .callout.hotbar-label { top: -10px; left: -10px; }
+    .callout.cursor-label { top: -11px; right: -11px; }
+
+    .reopen-chest {
+      position: absolute;
+      right: 18px;
+      bottom: 22px;
+      z-index: 4;
+      padding: 8px 12px;
+      color: #edf0e8;
+      background: #293129;
+      border: 1px solid #889283;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .reopen-chest:hover,
+    .reopen-chest:focus-visible {
+      border-color: var(--gold);
+      outline: 2px solid rgba(226, 189, 88, 0.32);
+    }
+
+    .hidden { display: none; }
+
+    .inspector {
+      min-height: 100%;
+      padding: 15px;
+      color: #dfe5dc;
+      background: #202521;
+      border: 1px solid #424b43;
+    }
+
+    .inspector h2 {
+      margin: 0 0 4px;
+      font-family: Georgia, "Microsoft YaHei", serif;
+      font-size: 17px;
+    }
+
+    .inspector-intro {
+      margin: 0 0 14px;
+      color: #9eaa9e;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .component-list {
+      display: grid;
+      gap: 1px;
+      background: #3d463e;
+      border: 1px solid #3d463e;
+    }
+
+    .component-row {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 8px;
+      padding: 9px;
+      background: #292f2a;
+    }
+
+    .component-number {
+      display: grid;
+      width: 20px;
+      height: 20px;
+      place-items: center;
+      color: #161916;
+      background: var(--gold);
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .component-row strong {
+      display: block;
+      margin-bottom: 2px;
+      color: #f0f2eb;
+      font-size: 11px;
+    }
+
+    .component-row code {
+      color: #bccc99;
+      font-size: 9px;
+    }
+
+    .component-row p {
+      margin: 3px 0 0;
+      color: #a7b0a5;
+      font-size: 9px;
+      line-height: 1.45;
+    }
+
+    .state-section {
+      margin-top: 16px;
+    }
+
+    .state-section h3 {
+      margin: 0 0 8px;
+      color: #cbd4c7;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .slot-states {
+      display: flex;
+      gap: 10px;
+    }
+
+    .state-sample {
+      width: 62px;
+      text-align: center;
+    }
+
+    .state-sample .inventory-slot {
+      margin: 0 auto 5px;
+    }
+
+    .state-sample span {
+      color: #929d91;
+      font-size: 9px;
+    }
+
+    .layout-note {
+      margin-top: 14px;
+      padding: 10px;
+      color: #b9c3b7;
+      background: #181d19;
+      border-left: 3px solid var(--moss-light);
+      font-size: 9px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1180px) {
+      .design-grid { grid-template-columns: 1fr; }
+      .inspector { min-height: 0; }
+      .component-list { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 760px) {
+      :root {
+        --slot-size: clamp(24px, calc((100vw - 72px) / 12), 42px);
+        --gap: 4px;
+      }
+      .workspace { width: min(100% - 16px, 720px); padding-top: 12px; }
+      .workspace-header { align-items: start; }
+      .workspace-header h1 { font-size: 18px; }
+      .status-key { display: none; }
+      .hotbar { grid-template-columns: repeat(12, var(--slot-size)); }
+      .chest-panel { bottom: 104px; min-width: 240px; }
+      .item-mark {
+        width: max(18px, calc(var(--slot-size) - 13px));
+        height: max(18px, calc(var(--slot-size) - 13px));
+        font-size: 12px;
+      }
+      .component-list { grid-template-columns: 1fr; }
+      .mock-caption span:last-child { display: none; }
+    }
+
+    @media (max-width: 420px) {
+      :root { --gap: 2px; }
+      .hotbar { padding: 5px; }
+      .hotbar-wrap { bottom: 12px; }
+      .chest-panel { bottom: 72px; }
+      .key-hint { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <header class="workspace-header">
+      <div>
+        <h1>Slotted Inventory · UI 结构草案</h1>
+        <p>玩家栏常驻，容器栏按交互展开；所有格子共享同一套 Slot Widget。</p>
+      </div>
+      <div class="status-key" aria-label="界面层级图例">
+        <span class="persistent">常驻层</span>
+        <span class="temporary">临时展开层</span>
+      </div>
+    </header>
+
+    <section class="design-grid">
+      <div class="game-shell">
+        <div class="game-viewport" id="gameViewport">
+          <section class="inventory-panel chest-panel" id="chestPanel" aria-label="旧木箱物品栏">
+            <span class="callout chest">2</span>
+            <header class="panel-header">
+              <div class="panel-title">旧木箱 <small>8 / 12</small></div>
+              <button class="icon-button" id="closeChest" type="button" title="关闭箱子" aria-label="关闭箱子">×</button>
+            </header>
+            <div class="slot-grid" id="chestGrid"></div>
+          </section>
+
+          <section class="inventory-panel hotbar-wrap" aria-label="玩家物品栏">
+            <span class="callout hotbar-label">1</span>
+            <div class="hotbar" id="playerHotbar"></div>
+          </section>
+
+          <div class="held-payload" id="heldPayload" aria-hidden="true">
+            <span class="callout cursor-label">4</span>
+            <span class="item-mark" id="heldMark">枝</span>
+            <span class="held-copy"><strong id="heldName">树枝 ×4</strong><span>点击格子放置</span></span>
+          </div>
+
+          <aside class="item-tooltip hidden" id="itemTooltip">
+            <strong id="tooltipName">燧石</strong>
+            <p id="tooltipDescription">坚硬而锋利，可用于制作基础工具。</p>
+          </aside>
+
+          <button class="reopen-chest hidden" id="reopenChest" type="button">打开旧木箱</button>
+        </div>
+        <div class="mock-caption">
+          <span>交互原型：点击非空格拿起；点击其他格放置或交换；悬停查看说明</span>
+          <span>目标画布 1920 × 1080 · Safe Zone 5%</span>
+        </div>
+      </div>
+
+      <aside class="inspector" aria-label="组件拆解">
+        <h2>Widget 拆解</h2>
+        <p class="inspector-intro">先保持组件数量少而清楚。玩家栏与箱子栏复用 Grid 和 Slot，只改变数据源与生命周期。</p>
+
+        <div class="component-list">
+          <article class="component-row">
+            <span class="component-number">1</span>
+            <div><strong>玩家常驻栏</strong><code>WBP_PlayerHotbar</code><p>底部居中，始终显示；负责 12 个快捷格和数字键提示。</p></div>
+          </article>
+          <article class="component-row">
+            <span class="component-number">2</span>
+            <div><strong>箱子面板</strong><code>WBP_ContainerPanel</code><p>打开容器时出现；标题、容量、关闭按钮与 SlotGrid。</p></div>
+          </article>
+          <article class="component-row">
+            <span class="component-number">3</span>
+            <div><strong>库存格子</strong><code>WBP_InventorySlot</code><p>显示图标、数量、耐久度和键位；处理 Hover/Selected 状态。</p></div>
+          </article>
+          <article class="component-row">
+            <span class="component-number">4</span>
+            <div><strong>鼠标手持物</strong><code>WBP_CursorPayload</code><p>监听 Context，只展示 HeldPayload，不自行修改库存。</p></div>
+          </article>
+          <article class="component-row">
+            <span class="component-number">5</span>
+            <div><strong>物品说明</strong><code>WBP_ItemTooltip</code><p>悬停延迟出现，展示名称、描述与后续可扩展属性。</p></div>
+          </article>
+          <article class="component-row">
+            <span class="component-number">6</span>
+            <div><strong>格子容器</strong><code>WBP_InventoryGrid</code><p>根据 SlotCount 生成格子；玩家栏与箱子共用。</p></div>
+          </article>
+        </div>
+
+        <section class="state-section">
+          <h3>Slot 状态</h3>
+          <div class="slot-states">
+            <div class="state-sample">
+              <button class="inventory-slot" type="button"><span class="item-mark" style="--item-color:#9bad67">草</span><span class="quantity">12</span></button>
+              <span>Default</span>
+            </div>
+            <div class="state-sample">
+              <button class="inventory-slot selected" type="button"><span class="item-mark" style="--item-color:#d0b15d">石</span><span class="quantity">8</span></button>
+              <span>Selected</span>
+            </div>
+            <div class="state-sample">
+              <button class="inventory-slot disabled" type="button" disabled><span class="item-mark" style="--item-color:#8b8e82">锁</span></button>
+              <span>Disabled</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="layout-note">
+          <strong>布局原则：</strong>箱子面板与玩家栏保持 12px 以上间距；CursorPayload 永远位于最高 UI 层；Tooltip 不捕获鼠标；关闭箱子不会关闭玩家栏。
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const items = {
+      twig: { name: "树枝", mark: "枝", quantity: 4, color: "#9d754d", description: "轻而有韧性，是制作工具与火把的基础材料。" },
+      grass: { name: "草", mark: "草", quantity: 12, color: "#9bad67", description: "晒干的长草，可用于编织绳索和简单装备。" },
+      flint: { name: "燧石", mark: "石", quantity: 8, color: "#aab0a3", description: "坚硬而锋利，可用于制作基础工具。" },
+      berries: { name: "浆果", mark: "果", quantity: 6, color: "#b75946", description: "可以直接食用，也可以作为烹饪材料。" },
+      log: { name: "木料", mark: "木", quantity: 10, color: "#8c6848", description: "结实的木料，可用于生火和建造。" },
+      rope: { name: "绳索", mark: "绳", quantity: 2, color: "#c5ad70", description: "由草编成的绳索，是许多装备的中间材料。" },
+      gem: { name: "绿宝石", mark: "晶", quantity: 1, color: "#62a685", description: "带着微弱温度的晶体，似乎蕴含特殊力量。" },
+      axe: { name: "石斧", mark: "斧", quantity: 1, color: "#798b8a", durability: 64, description: "适合砍伐树木。剩余耐久度 64%。" },
+      seed: { name: "种子", mark: "种", quantity: 9, color: "#c4a95d", description: "可以种下，也许能长出有用的植物。" }
+    };
+
+    const playerData = ["grass", "flint", "berries", "axe", null, "log", "rope", null, "seed", null, null, null];
+    const chestData = ["log", "log", "twig", null, "grass", "gem", null, "flint", "berries", null, null, "rope"];
+    const viewport = document.getElementById("gameViewport");
+    const held = document.getElementById("heldPayload");
+    const tooltip = document.getElementById("itemTooltip");
+    let heldItem = { ...items.twig };
+    let selectedSlot = null;
+
+    function createSlot(itemKey, index, showKey) {
+      const button = document.createElement("button");
+      button.className = "inventory-slot" + (itemKey ? "" : " empty");
+      button.type = "button";
+      button.dataset.item = itemKey || "";
+      button.setAttribute("aria-label", itemKey ? items[itemKey].name : "空格子");
+
+      const mark = document.createElement("span");
+      mark.className = "item-mark";
+      if (itemKey) {
+        mark.textContent = items[itemKey].mark;
+        mark.style.setProperty("--item-color", items[itemKey].color);
+      }
+      button.appendChild(mark);
+
+      if (showKey) {
+        const key = document.createElement("span");
+        key.className = "key-hint";
+        key.textContent = index < 9 ? String(index + 1) : index === 9 ? "0" : index === 10 ? "-" : "=";
+        button.appendChild(key);
+      }
+
+      if (itemKey && items[itemKey].quantity > 1) {
+        const quantity = document.createElement("span");
+        quantity.className = "quantity";
+        quantity.textContent = items[itemKey].quantity;
+        button.appendChild(quantity);
+      }
+
+      if (itemKey && items[itemKey].durability) {
+        const durability = document.createElement("span");
+        durability.className = "durability";
+        durability.innerHTML = `<span style="--durability:${items[itemKey].durability}%"></span>`;
+        button.appendChild(durability);
+      }
+
+      button.addEventListener("mouseenter", () => showTooltip(button));
+      button.addEventListener("mouseleave", hideTooltip);
+      button.addEventListener("focus", () => showTooltip(button));
+      button.addEventListener("blur", hideTooltip);
+      button.addEventListener("click", () => handleSlotClick(button));
+      return button;
+    }
+
+    function fillGrid(target, data, showKeys = false) {
+      target.replaceChildren(...data.map((item, index) => createSlot(item, index, showKeys)));
+    }
+
+    function showTooltip(slot) {
+      const key = slot.dataset.item;
+      if (!key) return;
+      const data = items[key];
+      document.getElementById("tooltipName").textContent = data.name;
+      document.getElementById("tooltipDescription").textContent = data.description;
+      const viewRect = viewport.getBoundingClientRect();
+      const slotRect = slot.getBoundingClientRect();
+      tooltip.style.left = `${Math.min(slotRect.right - viewRect.left + 8, viewRect.width - 194)}px`;
+      tooltip.style.top = `${Math.max(12, slotRect.top - viewRect.top - 18)}px`;
+      tooltip.classList.remove("hidden");
+    }
+
+    function hideTooltip() { tooltip.classList.add("hidden"); }
+
+    function updateHeld() {
+      if (!heldItem) {
+        held.classList.add("hidden");
+        return;
+      }
+      held.classList.remove("hidden");
+      const mark = document.getElementById("heldMark");
+      mark.textContent = heldItem.mark;
+      mark.style.setProperty("--item-color", heldItem.color);
+      document.getElementById("heldName").textContent = `${heldItem.name} ×${heldItem.quantity}`;
+    }
+
+    function handleSlotClick(slot) {
+      hideTooltip();
+      document.querySelectorAll(".inventory-slot.selected").forEach(element => element.classList.remove("selected"));
+      const slotKey = slot.dataset.item;
+      const slotItem = slotKey ? { ...items[slotKey] } : null;
+
+      if (!heldItem && slotItem) {
+        heldItem = slotItem;
+        slot.dataset.item = "";
+        slot.classList.add("empty", "selected");
+        slot.querySelector(".item-mark").textContent = "";
+        slot.querySelectorAll(".quantity, .durability").forEach(element => element.remove());
+      } else if (heldItem) {
+        const previous = heldItem;
+        heldItem = slotItem;
+        slot.dataset.item = Object.keys(items).find(key => items[key].name === previous.name) || "twig";
+        slot.classList.remove("empty");
+        slot.classList.add("selected");
+        const mark = slot.querySelector(".item-mark");
+        mark.textContent = previous.mark;
+        mark.style.setProperty("--item-color", previous.color);
+        let quantity = slot.querySelector(".quantity");
+        if (previous.quantity > 1) {
+          if (!quantity) {
+            quantity = document.createElement("span");
+            quantity.className = "quantity";
+            slot.appendChild(quantity);
+          }
+          quantity.textContent = previous.quantity;
+        } else if (quantity) {
+          quantity.remove();
+        }
+      }
+      selectedSlot = slot;
+      updateHeld();
+    }
+
+    viewport.addEventListener("pointermove", event => {
+      if (!heldItem) return;
+      const rect = viewport.getBoundingClientRect();
+      held.style.left = `${event.clientX - rect.left}px`;
+      held.style.top = `${event.clientY - rect.top}px`;
+    });
+
+    document.getElementById("closeChest").addEventListener("click", () => {
+      document.getElementById("chestPanel").classList.add("hidden");
+      document.getElementById("reopenChest").classList.remove("hidden");
+    });
+
+    document.getElementById("reopenChest").addEventListener("click", () => {
+      document.getElementById("chestPanel").classList.remove("hidden");
+      document.getElementById("reopenChest").classList.add("hidden");
+    });
+
+    fillGrid(document.getElementById("playerHotbar"), playerData, true);
+    fillGrid(document.getElementById("chestGrid"), chestData);
+    updateHeld();
+  </script>
+</body>
+</html>

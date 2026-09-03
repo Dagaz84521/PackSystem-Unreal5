@@ -4,14 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "UI/InventoryEntryViewData.h"
+#include "UI/Aggregate/InventoryAggregateEntryViewData.h"
 #include "InventoryAggregatePanelWidget.generated.h"
 
 /** 背包界面请求使用指定 Entry 中物品时触发。 */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
-	FInventoryUseItemRequestedSignature,
-	FInventoryEntryHandle,
-	EntryHandle);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInventoryUseItemRequestedSignature, FInventoryEntryHandle, EntryHandle);
 
 /**
  * 
@@ -23,15 +20,15 @@ class PACKSYSTEMPLUGIN_API UInventoryAggregatePanelWidget : public UUserWidget
 public:
 	/** 清空并重新生成整个背包界面。 */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Inventory|UI")
-	void RebuildEntries(const TArray<FInventoryEntryViewData>& Entries);
+	void RebuildEntries(const TArray<FInventoryAggregateEntryViewData>& Entries);
 
 	/** 创建新的 EntryWidget。 */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Inventory|UI")
-	void AddEntry(const FInventoryEntryViewData& EntryData);
+	void AddEntry(const FInventoryAggregateEntryViewData& EntryData);
 
 	/** 刷新已有的 EntryWidget。 */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Inventory|UI")
-	void UpdateEntry(const FInventoryEntryViewData& EntryData);
+	void UpdateEntry(const FInventoryAggregateEntryViewData& EntryData);
 
 	/** 删除 Handle 对应的 EntryWidget。 */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Inventory|UI")

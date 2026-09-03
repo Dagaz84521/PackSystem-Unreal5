@@ -6,7 +6,7 @@
 #include "Inventory/Aggregate/AggregateInventoryComponent.h"
 #include "Fragments/IconFragment.h"
 #include "Item/InventoryItemDefinition.h"
-#include "UI/InventoryEntryViewData.h"
+#include "UI/Aggregate/InventoryAggregateEntryViewData.h"
 #include "UI/Aggregate/InventoryAggregatePanelWidget.h"
 
 void UInventoryAggregateUIController::Initialize(UAggregateInventoryComponent* InInventory,
@@ -49,7 +49,7 @@ void UInventoryAggregateUIController::InventoryEntryAdded(
 	{
 		return;
 	}
-	FInventoryEntryViewData EntryData;
+	FInventoryAggregateEntryViewData EntryData;
 	if (MakeEntryViewData(EntryHandle, EntryData))
 	{
 		View->AddEntry(EntryData);
@@ -63,7 +63,7 @@ void UInventoryAggregateUIController::InventoryEntryChanged(
 	{
 		return;
 	}
-	FInventoryEntryViewData EntryData;
+	FInventoryAggregateEntryViewData EntryData;
 	if (MakeEntryViewData(EntryHandle, EntryData))
 	{
 		View->UpdateEntry(EntryData);
@@ -91,7 +91,7 @@ void UInventoryAggregateUIController::RefreshAllEntries()
 	{
 		return;
 	}
-	TArray<FInventoryEntryViewData> EntriesViewData;
+	TArray<FInventoryAggregateEntryViewData> EntriesViewData;
 	UInventoryComponent* BoundInventory = GetInventory();
 	if (!IsValid(BoundInventory))
 	{
@@ -102,7 +102,7 @@ void UInventoryAggregateUIController::RefreshAllEntries()
 	EntriesViewData.Reserve(InventoryHandles.Num());
 	for (const FInventoryEntryHandle& Handle : InventoryHandles)
 	{
-		FInventoryEntryViewData EntryData;
+		FInventoryAggregateEntryViewData EntryData;
 		if (MakeEntryViewData(Handle, EntryData))
 		{
 			EntriesViewData.Add(EntryData);
@@ -112,10 +112,10 @@ void UInventoryAggregateUIController::RefreshAllEntries()
 }
 
 bool UInventoryAggregateUIController::MakeEntryViewData(const FInventoryEntryHandle& EntryHandle,
-	FInventoryEntryViewData& OutViewData) const
+	FInventoryAggregateEntryViewData& OutViewData) const
 {
 	// 失败时保证输出数据为空，避免调用者使用旧数据。
-	OutViewData = FInventoryEntryViewData();
+	OutViewData = FInventoryAggregateEntryViewData();
 
 	UInventoryComponent* BoundInventory = GetInventory();
 	if (!IsValid(BoundInventory))
