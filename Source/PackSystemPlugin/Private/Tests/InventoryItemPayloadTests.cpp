@@ -483,7 +483,8 @@ bool FInventorySlottedUIControllerInitializationTest::RunTest(
 
 	UInventorySlottedUIController* Controller =
 		NewObject<UInventorySlottedUIController>();
-	Controller->Initialize(Inventory);
+	UInventorySlottedUIWidget* View = NewObject<UInventorySlottedUIWidget>();
+	Controller->Initialize(Inventory, View);
 
 	TestEqual(
 		TEXT("Initialize binds the slotted inventory"),
@@ -500,7 +501,7 @@ bool FInventorySlottedUIControllerInitializationTest::RunTest(
 			static_cast<UObject*>(Controller));
 	}
 
-	Controller->Initialize(Inventory);
+	Controller->Initialize(Inventory, View);
 	TestEqual(
 		TEXT("Repeated initialization preserves the shared context"),
 		Controller->GetInteractionContext(),

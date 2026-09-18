@@ -3,15 +3,14 @@
 #include "Interaction/InventoryInteractionContext.h"
 #include "Inventory/Slotted/SlottedInventoryComponent.h"
 
-void UInventorySlottedUIController::Initialize(
-	USlottedInventoryComponent* InInventory)
+void UInventorySlottedUIController::Initialize(USlottedInventoryComponent* InInventory, UInventorySlottedUIWidget* InWidget)
 {
 	Shutdown();
 	if (!BindInventory(InInventory))
 	{
 		return;
 	}
-
+	View = InWidget;
 	EnsureInteractionContext();
 }
 

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Core/InventoryComponent.h"
 #include "Core/InventoryQuantityOperationResult.h"
+#include "UI/Slotted/InventorySlottedUIWidget.h"
 #include "SlottedInventoryComponent.generated.h"
 
 UENUM(BlueprintType)
@@ -51,12 +52,17 @@ public:
 	FInventoryQuantityOperationResult AddItem(
 		const FInventoryItemPayload& Payload,
 		const FInventoryEntryHandle& PreferredSlot);
+	
+	FORCEINLINE TSubclassOf<UInventorySlottedUIWidget> GetSlottedUIWidgetClass() const {return UIClass;}
 
 protected:
 	virtual void OnRegister() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Slotted", meta = (ClampMin = "0", UIMin = "0"))
 	int32 SlotCount = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Slotted")
+	TSubclassOf<class UInventorySlottedUIWidget> UIClass;
 
 private:
 	/** 根据配置补齐固定空格；已有 Entry 永远不会在初始化阶段被删除。 */

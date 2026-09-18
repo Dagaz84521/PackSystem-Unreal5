@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InventorySlottedUIWidget.h"
 #include "UI/InventoryUIControllerBase.h"
 #include "InventorySlottedUIController.generated.h"
 
@@ -21,7 +22,7 @@ class PACKSYSTEMPLUGIN_API UInventorySlottedUIController : public UInventoryUICo
 public:
 	/** 切换当前观察的 Slotted Inventory，并完成通用 Inventory 事件绑定。 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory|UI")
-	void Initialize(USlottedInventoryComponent* InInventory);
+	void Initialize(USlottedInventoryComponent* InInventory, UInventorySlottedUIWidget* InView);
 
 	/** 解绑当前 Inventory；InteractionContext 跟随 Controller 生命周期，不在此处销毁。 */
 	virtual void Shutdown() override;
@@ -37,6 +38,9 @@ public:
 	UInventoryInteractionContext* GetInteractionContext() const;
 
 private:
+	UPROPERTY()
+	TObjectPtr<UInventorySlottedUIWidget> View;
+	
 	/** 首次成功初始化时创建 Context；重复初始化保持对象地址不变。 */
 	void EnsureInteractionContext();
 
